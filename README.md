@@ -46,7 +46,7 @@ Alternative approach.
 A couple pretty pictures.
 
 <img src=Pics/PrettyAccident.png></img>
-Testing pointy polygons contained one inside the other.  This was beforee I added balancing to the quadtree.  The black is the result from not mapping each line's right/left regions properly resulting in the floodfill algorithm getting confused about the region being inside or outside.
+Testing pointy polygons contained one inside the other.  This was before I added balancing to the quadtree.  The black is the result from not mapping each line's right/left regions properly resulting in the floodfill algorithm getting confused about the region being inside or outside.
 
 <img src=Pics/MountainScene.png></img>
 Just a random line wiggling through a larger quadtree.
