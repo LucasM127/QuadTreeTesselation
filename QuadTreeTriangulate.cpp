@@ -174,9 +174,9 @@ void QuadTreeTesselator::floodFillTriangulate(const DQT::Node &node, ID polygonI
         m_convexTriangleIds[polygonId].push_back(node.id);
     };
 
-#ifndef INCLUDE_STEINER_POINTS
-    k = 0;
-#endif
+//#ifndef INCLUDE_STEINER_POINTS
+//    k = 0;
+//#endif
 
     switch (k)
     {

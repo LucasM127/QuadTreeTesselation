@@ -27,7 +27,7 @@ $(LF)/TessLib.a: $(OBJS) $(LF)
 	ar -rvs $@ $(OBJS)
 
 $(TF)/sceneTest: $(OF)/SceneTest.o $(LF)/TessLib.a
-	$(CC) $(OF)/SceneTest.o TessLib.a -o $@ $(LINK)
+	$(CC) $(OF)/SceneTest.o $(LF)/TessLib.a -o $@ $(LINK)
 
 $(TF)/neighbourTest: $(OF)/NeighbourTest.o $(OF)/DQT.o
 	$(CC) $(OF)/NeighbourTest.o $(OF)/DQT.o -o $@ $(LINK)
