@@ -25,7 +25,8 @@ enum DIR : unsigned int
 
 struct CellInfo
 {
-    CellInfo() : steinerIds{INVALID_ID,INVALID_ID,INVALID_ID,INVALID_ID}{}
+    CellInfo() : steinerIds{INVALID_ID,INVALID_ID,INVALID_ID,INVALID_ID},
+                 neighbourIds{INVALID_ID,INVALID_ID,INVALID_ID,INVALID_ID}{}
     PointId cornerIds[4];//abcd
     PointId steinerIds[4];
 
