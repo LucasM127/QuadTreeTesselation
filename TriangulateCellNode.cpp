@@ -4,6 +4,8 @@
 #include <algorithm>
 #include <array>
 
+#include "Interval.hpp"
+
 #include <stack>
 
 //This function is the slowest part of the algorithm
@@ -203,75 +205,38 @@ void triangulateCellNode(CellInfo &C)
     else
         polygonIds.back() = lines.back().leftPolygonId;
 
-    //THIS part is overly unnecessarily complex but my brain is turning into mush so i'll let it sit for a bit
-    //Having both sides of the polyline polygon ids predefined should hopefully make it easier though
     //Figure out range continuities
-    std::vector<Range> ranges;
+    {//TODO::: UNIT TEST A BIT MORE HERE But seems to work
+    std::vector<Intervali> intervals;
+    intervals.reserve(8);
+    intervals.emplace_back(0.f,4.f,polygonIds.back());
+    for(size_t i = 0; i < lines.size(); ++i)
     {
-    float f_last = 0.f;
-    int ctr = 0;
-    std::stack<std::vector<size_t>> prevIndicesStack;
-    prevIndicesStack.push(std::vector<size_t>());
-    
-    for(auto p : pointList)
-    {
-        float f = mapToRange(p.p);
-        if(p.type == BPoint::TYPE::START)
-        {
-            prevIndicesStack.top().push_back(ranges.size());
-            ranges.emplace_back(f-f_last,ctr);
-            prevIndicesStack.push({ranges.size()});
-            f_last = f;
-        }
-        if(p.type == BPoint::TYPE::END)
-        {
-            ranges.emplace_back(f-f_last,ctr);//this one is correct
-            for(size_t i : prevIndicesStack.top())
-                ranges[i].id = ctr;
-            prevIndicesStack.pop();
-            f_last = f;
-            ++ctr;//done the polygon
-        }
+        Intervali I(mapToRange(lines[i].a), mapToRange(lines[i].b), polygonIds[i]);
+        insert(I, intervals);
     }
-    //for the very last polygon... polygonX
-    ranges.emplace_back(4.0f-f_last,ctr);
-    for(size_t i : prevIndicesStack.top())
-        ranges[i].id = ctr;
-    //std::cout<<"After walking ranges are: \n";
-    //for(auto r : ranges)
-    //    std::cout<<"ID:"<<r.id<<" "<<r.df<<"\n"; 
-    }
+    std::vector<Intervali> topInterval    = queryInterval(0.f,1.f,intervals);
+    std::vector<Intervali> leftInterval   = queryInterval(1.f,2.f,intervals);
+    std::vector<Intervali> bottomInterval = queryInterval(2.f,3.f,intervals);
+    std::vector<Intervali> rightInterval  = queryInterval(3.f,4.f,intervals);
 
-    //use ranges to map NeighbourIds
+    auto isContinuous = [](const std::vector<Intervali> &intervals) -> bool
     {
-    auto checkRangePolygonId = [](const std::vector<Range> &ranges, const std::vector<PointId> &polyIds, float lower, float upper) -> ID
-    {
-        float distTravelled = 0.f;
-        auto it = ranges.begin();
-        while(it != ranges.end())
-        {
-            if(distTravelled + it->df > lower)
-                break;
-            distTravelled += it->df;
-            it = std::next(it);
-        }
-        PointId id = polyIds[it->id];
-        while(it != ranges.end())
-        {
-            if(polyIds[it->id] != id)
-                return INVALID_ID;
-            if(distTravelled + it->df >= upper)
-                break;
-            distTravelled += it->df;
-            it = std::next(it);
-        }
-        return id;
+        ID i = intervals.front().val;
+        for(auto it = std::next(intervals.begin()); it != intervals.end(); it = std::next(it))
+            if(it->val != i)
+                return false;
+        return true;
     };
-
-    C.neighbourIds[DIR::UP]    = checkRangePolygonId(ranges,polygonIds,0,1);// getRangePolygonId(polygonIds,it1,it2);
-    C.neighbourIds[DIR::LEFT]  = checkRangePolygonId(ranges,polygonIds,1,2);// getRangePolygonId(polygonIds,it2,it3);
-    C.neighbourIds[DIR::DOWN]  = checkRangePolygonId(ranges,polygonIds,2,3);// getRangePolygonId(polygonIds,it3,it4);
-    C.neighbourIds[DIR::RIGHT] = checkRangePolygonId(ranges,polygonIds,3,4);// getRangePolygonId(polygonIds,it4,it5);
+    
+    if(isContinuous(topInterval))
+        C.neighbourIds[DIR::UP] = topInterval.front().val;
+    if(isContinuous(leftInterval))
+        C.neighbourIds[DIR::LEFT] = leftInterval.front().val;
+    if(isContinuous(bottomInterval))
+        C.neighbourIds[DIR::DOWN] = bottomInterval.front().val;
+    if(isContinuous(rightInterval))
+        C.neighbourIds[DIR::RIGHT] = rightInterval.front().val;
     }
 
     //and finally fan create the triangles from the concave polygons
