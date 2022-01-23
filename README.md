@@ -38,6 +38,7 @@ How it works.
 Issues.
   * Could always run faster, particularly the triangulateCellNode function.  My brain is mushy after a bit and may go revisit that logic at a later time.  However, the logic is sound and can handle input up to a range of 32000 due to using 32 bit unsigned integers for the quadtree direction vectors.  (2 bits for out of bounds checking, and 2 bits for each level quadrant id for a resolution of 2^15)
   * There's probably bugs to be found, ALWAYS.  Hopefully if someone makes a better version, I can see it on github.
+  * The code is always messy.
 
 Alternative approach.
   * An alternative approach to an interesting background surface would be based on Delaunay triangulation.  In that approach, I would subdivide each line with steiner points of a distance d.  I would then generate new points using a poisson point generation algorithm with new points getting placed gradually getting farther and farther away.  Then run a delaunay convex hull sweep line algorithm on the point structure.  Then I would search through all the points till I find a line start, walk along the line through the mesh cutting if have to.  However, if I subdivided the line appropiately, hopefully I wouldn't have to cut that much.  Would create a more random structure than the grid effect here though.  And if I can code at all maybe a bit slower.
@@ -45,7 +46,7 @@ Alternative approach.
 A couple pretty pictures.
 
 <img src=Pics/PrettyAccident.png></img>
-Testing pointy polygons contained one inside the other.  This was beforee I added balancing to the quadtree.  The black is the result from not mapping each line's right/left regions properly resulting in the floodfill algorithm getting confused about the region being inside or outside.
+Testing pointy polygons contained one inside the other.  This was before I added balancing to the quadtree.  The black is the result from not mapping each line's right/left regions properly resulting in the floodfill algorithm getting confused about the region being inside or outside.
 
 <img src=Pics/MountainScene.png></img>
 Just a random line wiggling through a larger quadtree.
