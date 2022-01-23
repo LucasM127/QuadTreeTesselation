@@ -13,6 +13,7 @@ all: $(OF) $(TF) $(LF)
 	make $(TF)/neighbourTest
 	make $(TF)/duplicatePointsTest
 	make $(TF)/lineClipTest
+	make $(TF)/intervalTest
 
 $(TF):
 	[ -d $@ ] || mkdir $@
@@ -37,6 +38,9 @@ $(TF)/lineClipTest: $(OF)/LineClipTest.o
 
 $(TF)/duplicatePointsTest: $(OF)/PointGenTest.o $(LF)/TessLib.a
 	$(CC) $(OF)/PointGenTest.o $(LF)/TessLib.a -o $@ $(LINK)
+
+$(TF)/intervalTest: $(OF)/IntervalTest.o $(OF)/Interval.o
+	$(CC) $(OF)/IntervalTest.o $(OF)/Interval.o -o $@
 
 $(OF)/QuadTreeRemoveDuplicates.o: QuadTreeRemoveDuplicates.cpp
 	$(CC) $< -c -o $@ $(INC)
@@ -68,7 +72,13 @@ $(OF)/LineClipTest.o: LineClipTest.cpp
 $(OF)/PointGenTest.o: PointGenTest.cpp
 	$(CC) $< -c -o $@ $(INC)
 
+$(OF)/Interval.o: Interval.cpp Interval.hpp
+	$(CC) $< -c -o $@
+
+$(OF)/IntervalTest.o: IntervalTest.cpp $(OF)/Interval.o
+	$(CC) $< -c -o $@
+
 clean:
-	rm $(OF)/*.o TessLib.a
+	rm $(OF)/*.o $(LF)/TessLib.a
 
 .Phony: clean
