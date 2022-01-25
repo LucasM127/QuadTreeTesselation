@@ -2,9 +2,6 @@
 
 <<<<<<< HEAD
 void insert(Intervali &I, std::vector<Intervali> &intervals)
-=======
-void insert(Intervali I, std::vector<Intervali>& intervals)
->>>>>>> cd5044f51de5c9640eda77621383aa070d2e1231
 {
     auto it = intervals.begin();
     while(it != intervals.end())

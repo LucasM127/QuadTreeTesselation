@@ -28,11 +28,7 @@ struct Intervali
     unsigned int val;
 };
 
-<<<<<<< HEAD
 void insert(Intervali &I, std::vector<Intervali> &intervals);
-=======
-void insert(Intervali I, std::vector<Intervali>& intervals);
->>>>>>> cd5044f51de5c9640eda77621383aa070d2e1231
 
 std::vector<Intervali> queryInterval(const float min, const float max, const std::vector<Intervali> &intervals);
 
