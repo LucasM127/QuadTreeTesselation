@@ -19,6 +19,25 @@ namespace TESS
 const ID INVALID_ID = -1;
 const ID EMPTY_SPACE_ID = 0;//INVALID_ID - 1;
 
+//https://www.newcastle.edu.au/__data/assets/pdf_file/0019/22519/23_A-fast-algortithm-for-generating-constrained-Delaunay-triangulations.pdf
+bool isDelaunay(const Point &p1, const Point &p2, const Point &p3, const Point &p)
+{//return true;
+    const float epsilon = std::numeric_limits<float>::epsilon();
+//is d in circumradius of triangle abc ???
+    float x13 = p1.x - p3.x;
+    float y13 = p1.y - p3.y;
+    float x23 = p2.x - p3.x;
+    float y23 = p2.y - p3.y;
+    float x1p = p1.x - p.x;
+    float y1p = p1.y - p.y;
+    float x2p = p2.x - p.x;
+    float y2p = p2.y - p.y;
+
+    float lhs = (x13*x23 + y13*y23)*(x2p*y1p - x1p*y2p);
+    float rhs = (x23*y13 - x13*y23)*(x2p*x1p + y1p*y2p);
+    return rhs - lhs < epsilon;
+}//epsilon removes unnecessary flips if equidistant...
+
 /*********************
  *    (1) <--- (4)
  *     a________d
@@ -106,12 +125,9 @@ struct Line
     }
 };
 
-//ignore triangles with duplicate points (not flat triangles)
-bool isNiceTriangle(const Point &a, const Point &b, const Point &c)
+bool notADuplicatePoint(const Point &a, const Point &b)
 {
-    if(a==b || a==c || b==c)
-        return false;
-    return true;
+    return !(a==b);
 }
 
 void triangulateCellNode(CellInfo &C)
@@ -177,8 +193,11 @@ void triangulateCellNode(CellInfo &C)
         }
 
         while(activeList.back().type != BPoint::TYPE::START)
-        {
-            concavePolygons[ctr].push_back(activeList.back());
+        {//If else a bit wonky though but that works
+            if(concavePolygons[ctr].size() && notADuplicatePoint(concavePolygons[ctr].back().p,activeList.back().p))
+                concavePolygons[ctr].push_back(activeList.back());
+            else if(!concavePolygons[ctr].size())
+                concavePolygons[ctr].push_back(activeList.back());
             activeList.pop_back();
         }
         concavePolygons[ctr].push_back(activeList.back());
@@ -189,7 +208,10 @@ void triangulateCellNode(CellInfo &C)
     }
     while(activeList.size())//last concave polygon
     {
-        concavePolygons[ctr].push_back(activeList.back());
+        if(concavePolygons[ctr].size() && notADuplicatePoint(concavePolygons[ctr].back().p,activeList.back().p))
+            concavePolygons[ctr].push_back(activeList.back());
+        else if(!concavePolygons[ctr].size())
+                concavePolygons[ctr].push_back(activeList.back());
         activeList.pop_back();
     }
 
@@ -249,52 +271,54 @@ void triangulateCellNode(CellInfo &C)
     {
         ID triangleId = polygonIds[k];
         ++k;
-//isNiceTriangle can make flat triangles of corner point - steiner point - corner point... 
-//gets right number of triangles though //Add to TODO list.. think about it
-        for(size_t i = 2; i < concavePolygon.size(); ++i)
-        {
-            if(isNiceTriangle(concavePolygon[0].p, concavePolygon[i-1].p, concavePolygon[i].p))
-            {
+//THIS IS AN ERROR i -> i-1 is true 
+        //so far so good
+        const BPoint *P3 = &concavePolygon[1];//i-2 when i = 3
+        for(size_t i = 3; i < concavePolygon.size(); ++i)//only delaunay test if 4 points
+        {//p3 is FAR point = i-2
+            if(isDelaunay(concavePolygon[0].p, concavePolygon[i-1].p, P3->p, concavePolygon[i].p))
+            {//0 -> (i-2) -> (i-1) //i-1 is p3 future
                 C.triangles.push_back(concavePolygon[0].p_id);
+                C.triangles.push_back(P3->p_id);//p3
                 C.triangles.push_back(concavePolygon[i-1].p_id);
-                C.triangles.push_back(concavePolygon[i].p_id);
-                C.triangleIds.push_back(triangleId);
+                P3 = &concavePolygon[i-1];
             }
+            else
+            {//(i-2)->(i-1)->i  but i-2 is p3 future so unchanged
+                C.triangles.push_back(P3->p_id);
+                C.triangles.push_back(concavePolygon[i-1].p_id);
+                C.triangles.push_back(concavePolygon[i].p_id);//that's right
+            }
+            C.triangleIds.push_back(triangleId);
+        }//which will leave 1 triangle in the queue at the end to pop out 0-(i-2)(OR P3)-i(now the back)
+        if(concavePolygon.size() > 2)
+        {
+            C.triangles.push_back(concavePolygon[0].p_id);
+            C.triangles.push_back(P3->p_id);
+            C.triangles.push_back(concavePolygon.back().p_id);
+            C.triangleIds.push_back(triangleId);
         }
     }
     }
 
 }
 
+//Either edge 0-(i-1) is delaunay or not becoming these 2 cases... 0-i becomes future 0-(i-1) edge in BOTH cases
+/***********************************
+ * 
+ *            0                    0
+ *           /|\                  / \
+ *          / | \                /   \
+ *         /  |  \         (i-2)/_____\(i)
+ *        / A | B \             \     /
+ *        --\_|_/--              \   /
+ *   (i-2)        (i)             \ /
+ *          (i-1)                (i-1)
+ *************************************/
+
 } // namespace TESS
 
-/*
-Here is a test for isDelaunay for reference copy/pasted from another file
-//https://www.newcastle.edu.au/__data/assets/pdf_file/0019/22519/23_A-fast-algortithm-for-generating-constrained-Delaunay-triangulations.pdf
-bool TriangularMesh::isDelaunay(EdgeId A)
-{//return true;
-    const float epsilon = std::numeric_limits<float>::epsilon();
-    EdgeId B = m_mates[A];
-    if(B >= CEILING) return true;//on hull
-    Point p1(points[m_edges[A]]);
-    Point p2(points[m_edges[next(A)]]);
-    Point p3(points[m_edges[last(A)]]);
-    Point p(points[m_edges[last(B)]]);
-//is d in circumradius of triangle abc ???
-    float x13 = p1.x - p3.x;
-    float y13 = p1.y - p3.y;
-    float x23 = p2.x - p3.x;
-    float y23 = p2.y - p3.y;
-    float x1p = p1.x - p.x;
-    float y1p = p1.y - p.y;
-    float x2p = p2.x - p.x;
-    float y2p = p2.y - p.y;
 
-    float lhs = (x13*x23 + y13*y23)*(x2p*y1p - x1p*y2p);
-    float rhs = (x23*y13 - x13*y23)*(x2p*x1p + y1p*y2p);
-    return rhs - lhs < epsilon;//0;//epsilon;//0;//-epsilon;
-}//epsilon removes unnecessary flips if equidistant...
-*/
 /*
 std::ostream &operator<<(std::ostream &os, const BPoint &B)
 {
