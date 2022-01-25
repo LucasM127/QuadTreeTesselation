@@ -15,6 +15,7 @@ all: $(OF) $(TF) $(LF)
 	make $(TF)/duplicatePointsTest
 	make $(TF)/lineClipTest
 	make $(TF)/intervalTest
+	make $(TF)/cellTriTest
 
 $(TF):
 	[ -d $@ ] || mkdir $@
@@ -42,6 +43,10 @@ $(TF)/duplicatePointsTest: $(OF)/PointGenTest.o $(LF)/TessLib.a
 
 $(TF)/intervalTest: $(OF)/IntervalTest.o $(OF)/Interval.o
 	$(CC) $(OF)/IntervalTest.o $(OF)/Interval.o -o $@
+
+$(TF)/cellTriTest: $(OF)/TriangulateCellNode.o $(OF)/TriangulateCellNodeTest.o $(OF)/Interval.o
+	$(CC) $(OF)/TriangulateCellNode.o $(OF)/TriangulateCellNodeTest.o $(OF)/Interval.o -o $@
+#Seems to need INVALID ID Reference is undefined... restructure
 
 $(OF)/QuadTreeRemoveDuplicates.o: QuadTreeRemoveDuplicates.cpp
 	$(CC) $< -c -o $@ $(INC)
@@ -78,6 +83,9 @@ $(OF)/Interval.o: Interval.cpp Interval.hpp
 
 $(OF)/IntervalTest.o: IntervalTest.cpp $(OF)/Interval.o
 	$(CC) $< -c -o $@
+
+$(OF)/TriangulateCellNodeTest.o: TriangulateCellNodeTest.cpp
+	$(CC) $< -c -o $@ $(INC)
 
 clean:
 	rm $(OF)/*.o $(LF)/TessLib.a

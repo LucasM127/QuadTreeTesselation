@@ -16,6 +16,9 @@
 namespace TESS
 {
 
+const ID INVALID_ID = -1;
+const ID EMPTY_SPACE_ID = 0;//INVALID_ID - 1;
+
 /*********************
  *    (1) <--- (4)
  *     a________d
@@ -103,7 +106,7 @@ struct Line
     }
 };
 
-//ignore flat triangles
+//ignore triangles with duplicate points (not flat triangles)
 bool isNiceTriangle(const Point &a, const Point &b, const Point &c)
 {
     if(a==b || a==c || b==c)
@@ -206,7 +209,7 @@ void triangulateCellNode(CellInfo &C)
         polygonIds.back() = lines.back().leftPolygonId;
 
     //Figure out range continuities
-    {//TODO::: UNIT TEST A BIT MORE HERE But seems to work
+    {
     std::vector<Intervali> intervals;
     intervals.reserve(8);
     intervals.emplace_back(0.f,4.f,polygonIds.back());
@@ -246,7 +249,8 @@ void triangulateCellNode(CellInfo &C)
     {
         ID triangleId = polygonIds[k];
         ++k;
-        
+//isNiceTriangle can make flat triangles of corner point - steiner point - corner point... 
+//gets right number of triangles though //Add to TODO list.. think about it
         for(size_t i = 2; i < concavePolygon.size(); ++i)
         {
             if(isNiceTriangle(concavePolygon[0].p, concavePolygon[i-1].p, concavePolygon[i].p))

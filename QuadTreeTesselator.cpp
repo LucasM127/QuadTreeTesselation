@@ -4,9 +4,6 @@
 namespace TESS
 {
 
-const ID INVALID_ID = -1;
-const ID EMPTY_SPACE_ID = 0;//INVALID_ID - 1;
-
 QuadTreeTesselator::QuadTreeTesselator(SZ width, SZ height, Vec2 offset, float stepSz)
     : m_width(width), m_height(height), m_offset(offset), m_stepSz(stepSz),
       m_quadTree(0,width,0,height)
