@@ -1,15 +1,12 @@
 #include "Interval.hpp"
 
-<<<<<<< HEAD
 void insert(Intervali &I, std::vector<Intervali> &intervals)
 {
     auto it = intervals.begin();
     while(it != intervals.end())
     {
-        if(it->contains(I))//it->min <= I.min)//
+        if(it->contains(I))
         {
-            //create three ranges vs the one range
-            //insert inserts before current iterator position and returns it to be the inserted position... ??
             Intervali A(it->min,I.min,it->val);
             Intervali Z(I.max,it->max,it->val);
             if(A.length() != 0.f)
@@ -29,23 +26,33 @@ void insert(Intervali &I, std::vector<Intervali> &intervals)
     }
 }
 
-//assumes is in range else may go out of bounds but that is known for the use case
+//I can't believe interval logic can be so complicated seems like so simple but is easy to mess up
 std::vector<Intervali> queryInterval(const float min, const float max, const std::vector<Intervali> &intervals)
 {
     assert(min >= intervals.front().min && max <= intervals.back().max);
 
-    auto it = intervals.begin();
-
-    while(!it->contains(min))
+    std::vector<Intervali>::const_iterator start, end;
+    std::vector<Intervali>::const_iterator it = intervals.begin();
+    while(it != intervals.end())
     {
+        if(it->contains(min))
+        {
+            break;
+        }
         it = std::next(it);
     }
-    //it = std::prev(it);
-    auto start = it;
-
-    while(!it->contains(max))
+    if(it->max == min)
         it = std::next(it);
-    auto end = std::next(it);
+    start = it;
+    while(it != intervals.end())
+    {
+        if(it->min >= max)
+        {
+            break;
+        }
+        it = std::next(it);
+    }
+    end = it;
 
     return std::vector<Intervali>(start,end);
 }

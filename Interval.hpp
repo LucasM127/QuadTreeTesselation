@@ -4,8 +4,7 @@
 #include <cassert>
 #include <vector>
 
-//not a full fledged interval library but just for what I need
-//Interval that holds an id ... intervali
+//SUCKS
 struct Intervali
 {
     Intervali(float a, float b, unsigned int i) : min(a), max(b), val(i)
@@ -20,9 +19,17 @@ struct Intervali
     {
         return I.max <= max && I.min >= min;
     }
+    inline bool contains(float min, float max) const
+    {
+        return max <= this->max && min >= this->min;
+    }
     inline bool contains(const float f) const
     {
         return f >= min && f <= max;
+    }
+    inline bool operator==(const Intervali &I)
+    {
+        return I.min == min && I.max == max && I.val == val;
     }
     float min, max;
     unsigned int val;
