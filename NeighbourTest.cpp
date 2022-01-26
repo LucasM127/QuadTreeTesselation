@@ -1,5 +1,4 @@
 //NeighbourFinding
-//#define DQT_UNBALANCED_TREE
 #include <SFML/Graphics.hpp>
 #include "DQT.hpp"
 
@@ -89,7 +88,7 @@ void drawNeighbours(DQT::QuadTree &tree, const DQT::Node &node, std::vector<sf::
 
 int main()
 {
-    srand(time(nullptr));
+    srand(0);//time(nullptr));
     int sz = 16;
     int n = 25;
     DQT::QuadTree quadTree(0,sz,0,sz);

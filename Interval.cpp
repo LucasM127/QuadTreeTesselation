@@ -26,7 +26,6 @@ void insert(Intervali &I, std::vector<Intervali> &intervals)
     }
 }
 
-//I can't believe interval logic can be so complicated seems like so simple but is easy to mess up
 std::vector<Intervali> queryInterval(const float min, const float max, const std::vector<Intervali> &intervals)
 {
     assert(min >= intervals.front().min && max <= intervals.back().max);

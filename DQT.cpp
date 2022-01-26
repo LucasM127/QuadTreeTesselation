@@ -4,6 +4,8 @@
 //#define DQT_POINTS_ON_CORNERS_ONLY
 //#define DQT_UNBALANCED_TREE
 
+//Balancing breaks if outofbounds mask is not used ?
+
 namespace DQT
 {
 
@@ -275,15 +277,19 @@ void QuadTree::balanceNeighbours(NodeId nodeId, DIR skipDir)
     int depth = m_nodes[nodeId].depth;
     ID dirVec = m_nodes[nodeId].dirVec;
 
+#ifdef DQT_WRAP_NEIGHBOURS
+    if(depth == 0) return;
+#endif
+
     bool isEast  = dirVec & (1 << (30-2*depth));
     bool isNorth = dirVec & (2 << (30-2*depth));
 
     if(skipDir != DIR::NORTH && isNorth)
     {
         ID northDirVec = neighbourDirVec(dirVec, depth,DIR::NORTH);
-//#ifndef DQT_WRAP_NEIGHBOURS
+#ifndef DQT_WRAP_NEIGHBOURS
         if(northDirVec & OUT_OF_BOUNDS_MASK) goto NorthExit;
-//#endif
+#endif
         int northNodeId = _atDir(northDirVec, depth-1);
         if(m_nodes[northNodeId].isLeaf)
         {
@@ -295,9 +301,9 @@ void QuadTree::balanceNeighbours(NodeId nodeId, DIR skipDir)
     if(skipDir != DIR::EAST && isEast)
     {
         ID eastDirVec = neighbourDirVec(dirVec, depth, DIR::EAST);
-//#ifndef DQT_WRAP_NEIGHBOURS
+#ifndef DQT_WRAP_NEIGHBOURS
         if(eastDirVec & OUT_OF_BOUNDS_MASK) goto EastExit;
-//#endif
+#endif
         int eastNodeId = _atDir(eastDirVec, depth-1);
         if(m_nodes[eastNodeId].isLeaf)
         {
@@ -309,9 +315,9 @@ void QuadTree::balanceNeighbours(NodeId nodeId, DIR skipDir)
     if(skipDir != DIR::SOUTH && !isNorth)
     {
         ID southDirVec = neighbourDirVec(dirVec, depth, DIR::SOUTH);
-//#ifndef DQT_WRAP_NEIGHBOURS
+#ifndef DQT_WRAP_NEIGHBOURS
         if(southDirVec & OUT_OF_BOUNDS_MASK) goto SouthExit;
-//#endif
+#endif
         int southNodeId = _atDir(southDirVec, depth-1);
         if(m_nodes[southNodeId].isLeaf)
         {
@@ -323,9 +329,9 @@ void QuadTree::balanceNeighbours(NodeId nodeId, DIR skipDir)
     if(skipDir != DIR::WEST && !isEast)
     {
         ID westDirVec = neighbourDirVec(dirVec, depth, DIR::WEST);
-//#ifndef DQT_WRAP_NEIGHBOURS
+#ifndef DQT_WRAP_NEIGHBOURS
         if(westDirVec & OUT_OF_BOUNDS_MASK) return;
-//#endif
+#endif
         int westNodeId = _atDir(westDirVec, depth-1);
         if(m_nodes[westNodeId].isLeaf)
         {

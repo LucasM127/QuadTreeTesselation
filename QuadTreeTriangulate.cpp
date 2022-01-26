@@ -48,8 +48,8 @@ void QuadTreeTesselator::triangulate()
 }
 
     //Remove duplicate Points //Optional
-    removeDuplicateLinePoints();//The points still show up though unfortunately how to remove them ? test the triangles i guess...
-//I broke the code somewhere else somehow.  
+    removeDuplicateLinePoints();
+      
 {
     Timer T("Triangulating1");//INDEED This is longer!
     for(const auto &node : m_lineNodes)
@@ -66,7 +66,7 @@ void QuadTreeTesselator::triangulate()
             PointId a = C.triangles[3*i+0];
             PointId b = C.triangles[3*i+1];
             PointId c = C.triangles[3*i+2];
-//            assert(a < 100000 && b < 100000 && c < 1000000);
+            
             m_polygons[triangleId].push_back(a);
             m_polygons[triangleId].push_back(b);
             m_polygons[triangleId].push_back(c);
@@ -83,7 +83,7 @@ void QuadTreeTesselator::triangulate()
         p = p + m_offset;
     }
 }
-{//YAY now I can just focus on each part and see if it makes a difference ... neighbours skip vs just at
+{
     Timer T("FloodFill");
     if(m_lineNodes.size() == 0)
         floodFillTriangulate(m_quadTree.at(0,0),TESS::EMPTY_SPACE_ID,DIR::LEFT);

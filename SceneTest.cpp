@@ -163,7 +163,7 @@ void addClippedLine(const float x, const std::vector<Point> &inPoints,
         Point p = intYatXPoint(a,b,x);
         line.push_back(p);//instead of b
         pQTT->addLine(line,rightPolygonId,leftPolygonId);
-        //not pushing back 'p' here hmmm
+        
         if(aLeft)
             pQTT = &rightQTT;
         else
@@ -199,7 +199,6 @@ void drawRegion(const TESS::QuadTreeTesselator &QTT, const unsigned int id, cons
     }
 }
 
-//Nothing if no line nodes... OH MY kindof funny
 int main()
 {
     srand(time(NULL));

@@ -9,7 +9,7 @@
 #include <stack>
 
 //This function is the slowest part of the algorithm
-//The range check part especially should be done another way
+//parallellizable
 
 #define INCLUDE_STEINER_POINTS
 
@@ -64,14 +64,6 @@ bool isLessCCW(const Point &a, const Point &b)
 {
     return mapToRange(a) < mapToRange(b);
 }
-
-//naming?
-struct Range
-{
-    Range(float f, int i) : df(f), id(i){}
-    float df;
-    int id;
-};
 
 struct BPoint
 {
@@ -264,15 +256,14 @@ void triangulateCellNode(CellInfo &C)
         C.neighbourIds[DIR::RIGHT] = rightInterval.front().val;
     }
 
-    //and finally fan create the triangles from the concave polygons
-    {//If you want a prettier triangulation can implement delaunay here if you end up noticing it....
+    //fan delaunay triangulate. Not robust (if flip, may affect edge on previously made triangle)
+    {
     unsigned int k = 0;
     for(auto &concavePolygon : concavePolygons)
     {
         ID triangleId = polygonIds[k];
         ++k;
-//THIS IS AN ERROR i -> i-1 is true 
-        //so far so good
+        
         const BPoint *P3 = &concavePolygon[1];//i-2 when i = 3
         for(size_t i = 3; i < concavePolygon.size(); ++i)//only delaunay test if 4 points
         {//p3 is FAR point = i-2
@@ -407,48 +398,3 @@ std::ostream &operator<<(std::ostream &os, const BPoint &B)
     }
     }
 }*/
-
-
-/*
-bool addTriangle(std::vector<Point> &triangles, const Point &a, const Point &b, const Point &c)
-{
-    if(a==b || a==c || b==c)
-        return false;
-    triangles.push_back(a);
-    triangles.push_back(b);
-    triangles.push_back(c);
-    return true;
-}*/
-
-/*
-bool sortLines(const Line &l1, const Line &l2)
-{
-    if(l1.b == l2.b)
-        return !isLessCCW(l1.a,l2.a);
-    return isLessCCW(l1.b, l2.b);
-}*/
-
-/*  Seem to get bounds errors this way :(
-    auto getRangeItAt = [](const std::vector<Range> &R, float f) -> auto
-    {
-        float distTravelled = 0.f;
-        for(auto it = R.begin(); it != R.end(); it = std::next(it))
-        {
-            if(distTravelled + it->df > f)//> not >= ???
-                return it;
-            distTravelled += it->df;
-        }
-        return R.end();
-    };
-
-    auto getRangePolygonId = [](const std::vector<PointId> &polyIds, std::vector<Range>::const_iterator it1, std::vector<Range>::const_iterator it2) -> ID
-    {
-        PointId id = polyIds[it1->id];//????
-        for(auto it = std::next(it1); it != std::next(it2); it = std::next(it))
-        {
-            if(it->df != 0.f && polyIds[it->id] != id)
-                return INVALID_ID;
-        }
-        return id;
-    };
-*/

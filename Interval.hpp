@@ -4,7 +4,7 @@
 #include <cassert>
 #include <vector>
 
-//SUCKS
+//Just a quick thingy
 struct Intervali
 {
     Intervali(float a, float b, unsigned int i) : min(a), max(b), val(i)
