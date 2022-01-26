@@ -256,7 +256,7 @@ void triangulateCellNode(CellInfo &C)
         C.neighbourIds[DIR::RIGHT] = rightInterval.front().val;
     }
 
-    //fan delaunay triangulate. Not robust (if flip, may affect edge on previously made triangle)
+    //fan delaunay triangulate. Not robust (if flip, may affect edge on previously made triangle and am not dealing with that recursively)
     {
     unsigned int k = 0;
     for(auto &concavePolygon : concavePolygons)

@@ -22,6 +22,7 @@ enum class DIR
     WEST
 };
 
+//possibility: cache neighbours
 struct Node
 {
     Node(ID _id, ID _dirVec, uint8_t _depth, bool _isLeaf);

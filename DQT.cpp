@@ -4,8 +4,6 @@
 //#define DQT_POINTS_ON_CORNERS_ONLY
 //#define DQT_UNBALANCED_TREE
 
-//Balancing breaks if outofbounds mask is not used ?
-
 namespace DQT
 {
 

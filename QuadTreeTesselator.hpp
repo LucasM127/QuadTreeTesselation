@@ -1,3 +1,11 @@
+//TODOS left... figure out better ray cast step method
+//Only other thing really that may be interesting to implement is
+//adding floating point support.. but would have to create a dynamic tree structure for that
+//cause otherwise it would be a point in a square, with uneven rectangular regions around it
+//and (especially if is close to an edge), I do not think that would look nice in line with the rest of the map
+//but maybe not???????
+//But if you had an automatically updating mesh with dynamic geometry... that may look wonky
+
 #ifndef QUAD_TREE_TESSELATOR_HPP
 #define QUAD_TREE_TESSELATOR_HPP
 
