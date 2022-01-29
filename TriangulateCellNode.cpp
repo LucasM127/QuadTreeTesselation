@@ -2,11 +2,8 @@
 #include "Quadrants.hpp"
 #include <cassert>
 #include <algorithm>
-#include <array>
 
 #include "Interval.hpp"
-
-#include <stack>
 
 //This function is the slowest part of the algorithm
 //parallellizable
@@ -308,29 +305,6 @@ void triangulateCellNode(CellInfo &C)
  *************************************/
 
 } // namespace TESS
-
-
-/*
-std::ostream &operator<<(std::ostream &os, const BPoint &B)
-{
-    os<<"ID:"<<B.p_id<<" ";
-    switch (B.type)
-    {
-    case BPoint::TYPE::START:
-        os<<"START";
-        break;
-    case BPoint::TYPE::END:
-        os<<"END";
-        break;
-    case BPoint::TYPE::FREE:
-        os<<"FREE";
-        break;
-    default:
-        break;
-    }
-    return os << " " << B.p.x << " " << B.p.y;
-}
-*/
 
 /*
 //THERE IS A BUG IN HERE TOO

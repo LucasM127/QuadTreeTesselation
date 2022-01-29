@@ -54,10 +54,10 @@ private:
     std::unordered_map<ID,std::vector<ID>> m_convexTriangleIds;//?
 
     void genGridPoints(const DQT::Node &node);
-
     void genLinePoints(LineData &LD);
+
     void removeDuplicateLinePoints();
-    void fixCoords(float x, float y, bool headsRight, bool headsUp, int &px, int &py);
+    
     void castRay(const Point &a, const Point &b, ID id, ID id_out, PointId &startId, PointId &endId);
 
     void floodFillTriangulate(const DQT::Node &node, ID polygonId, DIR skipDir);

@@ -2,22 +2,6 @@
 #include "TriangulateCellNode.hpp"
 
 #include "Quadrants.hpp"
-#include <chrono>
-#include <iostream>
-
-class Timer
-{
-public:
-    Timer(const std::string &s) : string(s), start(std::chrono::high_resolution_clock::now()) {}
-    ~Timer()
-    {
-        finish = std::chrono::high_resolution_clock::now();
-        auto duration = std::chrono::duration_cast<std::chrono::microseconds>(finish-start);
-        std::cout<<string<<" took "<<duration.count()<<" microseconds\n";
-    }
-    const std::string &string;
-    std::chrono::time_point<std::chrono::high_resolution_clock> start, finish;
-};
 
 namespace TESS
 {
@@ -34,24 +18,17 @@ void QuadTreeTesselator::triangulate()
 
     m_cellInfos.resize(m_quadTree.numLeaves());
 
-{
-    Timer T("Gen Grid Points");
     genGridPoints(m_quadTree.root());
     m_numGridPoints = m_points.size();
-}
-{
-    Timer T("Gen Line Points");
+
     for(auto &LD : m_lineDatas)
     {
         genLinePoints(LD);
     }
-}
 
     //Remove duplicate Points //Optional
     removeDuplicateLinePoints();
       
-{
-    Timer T("Triangulating1");//INDEED This is longer!
     for(const auto &node : m_lineNodes)
     {
         CellInfo &C = m_cellInfos[node->id];//m_quadTree.data(nodeId);
@@ -82,9 +59,7 @@ void QuadTreeTesselator::triangulate()
         p.y *= m_stepSz;
         p = p + m_offset;
     }
-}
-{
-    Timer T("FloodFill");
+
     if(m_lineNodes.size() == 0)
         floodFillTriangulate(m_quadTree.at(0,0),TESS::EMPTY_SPACE_ID,DIR::LEFT);
     for(auto node : m_lineNodes)
@@ -126,13 +101,6 @@ void QuadTreeTesselator::triangulate()
         }
 
     }
-/*
-   for(size_t i = 0; i < m_cellInfos.size(); ++i)
-   {
-       std::cout<<i<<": "<<m_cellInfos[i].cornerIds[0]<<" "<<m_cellInfos[i].cornerIds[1]<<" "<<m_cellInfos[i].cornerIds[2]<<" "<<m_cellInfos[i].cornerIds[3]<<"\n";
-   }
-*/
-}
 }
 
 //oops add polygon Id but later...
