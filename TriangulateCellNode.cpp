@@ -278,6 +278,7 @@ void triangulateCellNode(CellInfo &C)
                 C.triangles.push_back(concavePolygon[0].p_id);
                 C.triangles.push_back(P3->p_id);//p3
                 C.triangles.push_back(concavePolygon[i-1].p_id);
+                P3last = P3;//???
                 P3 = &concavePolygon[i-1];
             }
             else
@@ -293,12 +294,12 @@ void triangulateCellNode(CellInfo &C)
             //Test the last line delaunay with last from flipping it if there was a flip. (drawing pics helps my brain)
             if(P3last != P3  && !isDelaunay(concavePolygon[0].p, concavePolygon.back().p, P3->p, P3last->p))
             {
-                    C.triangles.push_back(P3last->p_id);//P3->p_id);
                     C.triangles.push_back(concavePolygon.back().p_id);// P3last->p_id);
+                    C.triangles.push_back(P3last->p_id);//P3->p_id);
                     C.triangles.push_back(concavePolygon[0].p_id);//concavePolygon.back().p_id);
                     C.triangleIds.push_back(triangleId);
                     //edit the last triangle too!!!
-                    C.triangles[editPtIndex] = concavePolygon.back().p_id;
+                    C.triangles[editPtIndex] = concavePolygon.back().p_id;//yes
             }
             else
             {
