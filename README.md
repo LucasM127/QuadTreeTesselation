@@ -1,5 +1,6 @@
 # QuadTree Tesselation
 QuadTree Based Mesh Tesselation Algorithm
+(still working on bugs for a bit)
 
 Generates a triangular mesh divided into regions according to input polylines.
 
