@@ -194,7 +194,8 @@ void drawRegion(const TESS::QuadTreeTesselator &QTT, const unsigned int id, cons
         sf::Color color = baseColor;
         color.r += t + s + c;
         color.g += t + s + c;
-        color.b += t + s + c;
+        color.b += t+ s + c;
+        //color.a = 128;
         triangles.emplace_back(points[i],color);
     }
 }
@@ -276,7 +277,7 @@ int main()
     sf::Event event;
     while (window.isOpen())
     {
-        window.clear(sf::Color(32,32,32));
+        window.clear(sf::Color(224,224,224));//sf::Color(32,32,32));
         window.draw(triangles.data(),triangles.size(),sf::Triangles);
         //for(auto &c : circles)
         //    window.draw(c);//see any brighter spots -> duplicate points

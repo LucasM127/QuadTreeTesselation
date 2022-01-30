@@ -84,9 +84,62 @@ void test2()//in sceneTest not showing the triangle properly
     test(C);
 }
 
+
+void test3()//from scenetest
+{
+    TESS::CellInfo C;
+    C.cornerIds[TESS::QUADRANT::NW] = 10;
+    C.cornerIds[TESS::QUADRANT::SW] = 11;
+    C.cornerIds[TESS::QUADRANT::SE] = 12;
+    C.cornerIds[TESS::QUADRANT::NE] = 13;
+
+//    C.steinerIds[TESS::DIR::UP] = 20;
+//    C.steinerIds[TESS::DIR::LEFT] = 21;
+    C.steinerIds[TESS::DIR::DOWN] = 22;
+    C.steinerIds[TESS::DIR::RIGHT] = 23;
+
+    C.lines = 
+    {
+        {0.5f,0.0f},
+        {1.0f,0.5f}
+    };
+
+    C.linePolygonIds = {0,5};
+    C.linePointIds = {0,1};
+
+    test(C);
+}
+
+void test4()//from scenetest
+{
+    TESS::CellInfo C;
+    C.cornerIds[TESS::QUADRANT::NW] = 10;
+    C.cornerIds[TESS::QUADRANT::SW] = 11;
+    C.cornerIds[TESS::QUADRANT::SE] = 12;
+    C.cornerIds[TESS::QUADRANT::NE] = 13;
+
+//    C.steinerIds[TESS::DIR::UP] = 20;
+//    C.steinerIds[TESS::DIR::LEFT] = 21;
+    C.steinerIds[TESS::DIR::DOWN] = 22;
+    C.steinerIds[TESS::DIR::RIGHT] = 23;
+
+    C.lines = 
+    {
+        {0.0f,1.0f},
+        {0.5f,0.0f},
+        {0.0f,1.0f},
+        {1.0f,0.5f}
+    };
+
+    C.linePolygonIds = {0,5,5,0};
+    C.linePointIds = {0,1,2,3};
+
+    test(C);
+}
+
 int main()
 {
-    test2();
+    test4();
 //    diamondTest();
     /*
 
