@@ -278,7 +278,7 @@ void triangulateCellNode(CellInfo &C)
                 C.triangles.push_back(concavePolygon[0].p_id);
                 C.triangles.push_back(P3->p_id);//p3
                 C.triangles.push_back(concavePolygon[i-1].p_id);
-                P3last = P3;//???
+                P3last = P3;
                 P3 = &concavePolygon[i-1];
             }
             else
