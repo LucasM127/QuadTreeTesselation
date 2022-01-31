@@ -162,9 +162,36 @@ void test5()//Faily from pointyTest  not mapping a triangle properly
     test(C);
 }
 
+void test6()//from pointyTest... intervals not mapping properly probably due to isContinuous function
+{
+    TESS::CellInfo C;
+    C.cornerIds[TESS::QUADRANT::NW] = 10;
+    C.cornerIds[TESS::QUADRANT::SW] = 11;
+    C.cornerIds[TESS::QUADRANT::SE] = 12;
+    C.cornerIds[TESS::QUADRANT::NE] = 13;
+
+//    C.steinerIds[TESS::DIR::UP] = 20;
+//    C.steinerIds[TESS::DIR::LEFT] = 21;
+//    C.steinerIds[TESS::DIR::DOWN] = 22;
+//    C.steinerIds[TESS::DIR::RIGHT] = 23;
+
+    C.lines = 
+    {
+        {0.0f,0.0f},
+        {1.0f,1.0f},
+        {1.0f,0.5f},
+        {0.75f,0.0f}
+    };
+
+    C.linePolygonIds = {5,0,5,0};
+    C.linePointIds = {0,1,2,3};
+
+    test(C);
+}
+
 int main()
 {
-    test5();
+    test6();
 //    diamondTest();
     /*
 

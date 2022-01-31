@@ -64,11 +64,38 @@ void testB()
     printOut(subRange);
 }
 
+void testC()//made a wrong assumption about how the intervals work :(
+{
+    Intervali A(0.f,4.f,0);
+    Intervali B(2.75f,3.5f,0);
+    Intervali C(2.f,4.f,1);
+
+    std::vector<Intervali> intervals = {A};
+
+    printOut(intervals);
+
+    insert(B,intervals);
+    insert(C,intervals);
+
+    printOut(intervals);
+
+    std::vector<Intervali> subRange = queryInterval(0.0f,1.0f,intervals);
+    printOut(subRange);
+    subRange = queryInterval(1.0f,2.0f,intervals);
+    printOut(subRange);
+    subRange = queryInterval(2.0f,3.0f,intervals);
+    printOut(subRange);
+    subRange = queryInterval(3.0f,4.0f,intervals);
+    printOut(subRange);
+}
+
 int main()
 {
-    testA();//should only hold 1 each
-    std::cout<<"///////////////////\n";
-    testB();//should hold both...
+//    testA();//should only hold 1 each
+//    std::cout<<"///////////////////\n";
+//    testB();//should hold both...
+
+    testC();
 
     return 0;
 }

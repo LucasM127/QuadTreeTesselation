@@ -22,6 +22,23 @@ void insert(Intervali &I, std::vector<Intervali> &intervals)
             }
             return;
         }
+        else if(I.contains(*it))
+        {
+            Intervali A(I.min,it->min,I.val);
+            Intervali Z(it->max,I.max,I.val);
+            if(A.length() != 0.f)
+            {
+                it = intervals.insert(it,A);
+                it = std::next(it);
+            }
+//            *it = I;
+            if(Z.length() != 0.f)
+            {
+                it = std::next(it);
+                intervals.insert(it,Z);
+            }
+            return;
+        }
         it = std::next(it);
     }
 }
