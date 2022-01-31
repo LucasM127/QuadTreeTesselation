@@ -15,6 +15,8 @@
 
 #include <unordered_map>
 
+#include <SFML/Graphics.hpp>
+
 namespace TESS
 {
 
@@ -25,6 +27,11 @@ public:
     
     void addLine(const std::vector<Point> &line, ID rightId, ID leftId = TESS::EMPTY_SPACE_ID);
     void triangulate();
+
+//debuggy ish
+    const DQT::QuadTree &getQT() const;
+    const std::vector<CellInfo> &getCellInfos() const;
+    const std::vector<const DQT::Node*> &getLineNodes() const;
 
     const std::vector<Point> &getPoints() const;
     const std::vector<PointId> &getTriangles(const ID id) const;

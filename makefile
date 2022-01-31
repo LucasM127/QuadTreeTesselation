@@ -9,6 +9,9 @@ TF = Tests
 OBJS = $(OF)/QuadTreeRayCast.o $(OF)/QuadTreeTesselator.o $(OF)/TriangulateCellNode.o $(OF)/QuadTreeTriangulate.o \
 		$(OF)/QuadTreeRemoveDuplicates.o $(OF)/DQT.o $(OF)/Interval.o
 
+#TODO: RESTRUCTURE tests code out of here
+#TODO: fix dependencies of make all tests
+
 all: $(OF) $(TF) $(LF)
 	make $(TF)/sceneTest
 	make $(TF)/neighbourTest
@@ -16,6 +19,7 @@ all: $(OF) $(TF) $(LF)
 	make $(TF)/lineClipTest
 	make $(TF)/intervalTest
 	make $(TF)/cellTriTest
+	make $(TF)/pointyTest
 
 $(TF):
 	[ -d $@ ] || mkdir $@
@@ -46,7 +50,9 @@ $(TF)/intervalTest: $(OF)/IntervalTest.o $(OF)/Interval.o
 
 $(TF)/cellTriTest: $(OF)/TriangulateCellNode.o $(OF)/TriangulateCellNodeTest.o $(OF)/Interval.o
 	$(CC) $(OF)/TriangulateCellNode.o $(OF)/TriangulateCellNodeTest.o $(OF)/Interval.o -o $@
-#Seems to need INVALID ID Reference is undefined... restructure
+
+$(TF)/pointyTest: $(OF)/pointyTest.o $(OF)/SFMLCamera.o $(LF)/TessLib.a
+	$(CC) $(OF)/pointyTest.o $(OF)/SFMLCamera.o $(LF)/TessLib.a -o $@ -lGL $(LINK)
 
 $(OF)/QuadTreeRemoveDuplicates.o: QuadTreeRemoveDuplicates.cpp
 	$(CC) $< -c -o $@ $(INC)
@@ -85,6 +91,12 @@ $(OF)/IntervalTest.o: IntervalTest.cpp $(OF)/Interval.o
 	$(CC) $< -c -o $@
 
 $(OF)/TriangulateCellNodeTest.o: TriangulateCellNodeTest.cpp
+	$(CC) $< -c -o $@ $(INC)
+
+$(OF)/pointyTest.o: pointyTest.cpp
+	$(CC) $< -c -o $@ $(INC)
+
+$(OF)/SFMLCamera.o: SFMLCamera.cpp SFMLCamera.hpp
 	$(CC) $< -c -o $@ $(INC)
 
 clean:

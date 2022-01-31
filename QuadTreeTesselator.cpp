@@ -9,6 +9,21 @@ QuadTreeTesselator::QuadTreeTesselator(SZ width, SZ height, Vec2 offset, float s
       m_quadTree(0,width,0,height)
 {}
 
+const DQT::QuadTree &QuadTreeTesselator::getQT() const
+{
+    return m_quadTree;
+}
+
+const std::vector<CellInfo> &QuadTreeTesselator::getCellInfos() const
+{
+    return m_cellInfos;
+}
+
+const std::vector<const DQT::Node*> &QuadTreeTesselator::getLineNodes() const
+{
+    return m_lineNodes;
+}
+
 const std::vector<Point> &QuadTreeTesselator::getPoints() const
 {
     return m_points;

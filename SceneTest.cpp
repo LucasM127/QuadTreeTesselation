@@ -192,9 +192,9 @@ void drawRegion(const TESS::QuadTreeTesselator &QTT, const unsigned int id, cons
         int s = S[i%S.size()];
         int c = C[cellIds[(k/3)]%C.size()];
         sf::Color color = baseColor;
-        color.r += t + s + c;
-        color.g += t + s + c;
-        color.b += t+ s + c;
+        color.r += t;// + s + c;
+        color.g += t;// + s + c;
+        color.b += t;// + s + c;
         //color.a = 128;
         triangles.emplace_back(points[i],color);
     }
@@ -207,7 +207,7 @@ int main()
     for(int i = 0; i < 16; i++)
         S.emplace_back(rand()%16);
     for(int i = 0; i < 16; i++)
-        T.emplace_back(rand()%16);
+        T.emplace_back(rand()%64);//16);
     for(int i = 0; i < 16; i++)
         C.emplace_back(rand()%32);
 

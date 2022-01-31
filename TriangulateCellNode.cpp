@@ -130,6 +130,7 @@ void addIfNotDuplicate(std::vector<BPoint> &concavePolygon, const BPoint &B)
         concavePolygon.push_back(B);
 }
 
+//TODO: REVAMP Bpoint logic... shouldn't have to have 2 separate lists to sort?????
 void triangulateCellNode(CellInfo &C)
 {
     std::vector<BPoint> pointList =
@@ -198,7 +199,7 @@ void triangulateCellNode(CellInfo &C)
         }
         addIfNotDuplicate(concavePolygons[ctr],activeList.back());
         addIfNotDuplicate(concavePolygons[ctr],B);
-        activeList.back().type = BPoint::TYPE::FREE;
+        activeList.back().type = BPoint::TYPE::FREE;//WHY?
         activeList.push_back(B);
         ++ctr;
     }
@@ -228,8 +229,8 @@ void triangulateCellNode(CellInfo &C)
     std::vector<Intervali> intervals;
     intervals.reserve(8);
     intervals.emplace_back(0.f,4.f,polygonIds.back());
-    for(size_t i = 0; i < lines.size(); ++i)
-    {
+    for(size_t i = 0; i < lines.size(); ++i)//why arent the lines sorted????
+    {//GAH
         Intervali I(mapToRange(lines[i].a), mapToRange(lines[i].b), polygonIds[i]);
         insert(I, intervals);
     }
@@ -257,7 +258,7 @@ void triangulateCellNode(CellInfo &C)
         C.neighbourIds[DIR::RIGHT] = rightInterval.front().val;
     }
 
-    //fan delaunay triangulate. Think I got it this time. (fingers crossed)
+    //fan delaunay triangulate.
     //TODO... maybe make a visualizer of this algorithm so I can understand it better / test robustness
     //is better than it was though so that's good
     {
