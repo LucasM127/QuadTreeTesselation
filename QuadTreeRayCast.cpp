@@ -143,7 +143,7 @@ void QuadTreeTesselator::castRay(const Point &a, const Point &b, ID rightPolygon
                 exitPoint.x = min_x;
                 distX = min_x - a.x;//distX = (p.x - a.x) - x_dist_to_travel;
             }
-            exitPoint.y = a.y + m * distX;
+            exitPoint.y = a.y + (dy * distX / dx);// m * distX;
         }
         else if((stepY + epsilon) < stepX)
         {
@@ -157,7 +157,7 @@ void QuadTreeTesselator::castRay(const Point &a, const Point &b, ID rightPolygon
                 exitPoint.y = min_y;
                 distY = min_y - a.y;//distY = (p.y - a.y) - y_dist_to_travel;
             }
-            exitPoint.x = a.x + m_ * distY;
+            exitPoint.x = a.x + (dx * distY / dy);//a.x + m_ * distY;
         }
         else
         {
