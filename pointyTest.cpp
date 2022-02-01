@@ -6,6 +6,22 @@
 #include <random>
 #include "SFMLCamera.hpp"
 
+
+#include <chrono>
+class Timer
+{
+public:
+    Timer(const std::string &s) : string(s), start(std::chrono::high_resolution_clock::now()) {}
+    ~Timer()
+    {
+        finish = std::chrono::high_resolution_clock::now();
+        auto duration = std::chrono::duration_cast<std::chrono::microseconds>(finish-start);
+        std::cout<<string<<" took "<<duration.count()<<" microseconds\n";
+    }
+    const std::string &string;
+    std::chrono::time_point<std::chrono::high_resolution_clock> start, finish;
+};
+
 std::vector<int> S;//Smoothing Effect
 std::vector<int> C;//Grid Effect
 std::vector<int> T;//Triangle Effect
@@ -25,7 +41,7 @@ void drawRegion(const TESS::QuadTreeTesselator &QTT, const unsigned int id, cons
         color.r += t + s + c;
         color.g += t + s + c;
         color.b += t + s + c;
-        color.a = 64;
+        color.a = 192;//64;
         triangles.emplace_back(points[i],color);
     }
 }
@@ -96,39 +112,42 @@ int main()
 {//should i put in my camera system again ? YEAH I NEEDS IT
     std::random_device rd;
     int seed = rd();
-    seed = 1638318210;//super faily seed for testing purposes
-    std::cout<<seed<<std::endl;
+    //seed = 1638318210;//super faily seed for testing purposes
+    //seed = -192464786;
+//    std::cout<<seed<<std::endl;
+    int sz = 4096;//64;
 
     std::mt19937 random_engine(seed);
     std::uniform_real_distribution<float> randFloat(0.f,1.f);
 
     std::vector<Point> pointyPolygon;
-    for(float i = 0.f; i < 360.f; i += 5.f)
+    for(float i = 0.f; i < 360.f; i += 1.f)//0.25f)//1.f)// 5.f)
     {
-        float r = randFloat(random_engine) * 24 + 8;
+        float r = randFloat(random_engine) * (3*sz/8) + (sz/8);
         float theta = i * M_PI / 180.f;
         float x = r * cosf(theta);
         float y = r * sinf(theta);
-        x = (int)x + 32;
-        y = (int)y + 32;
+        x = (int)x + sz/2;
+        y = (int)y + sz/2;
         pointyPolygon.emplace_back(x,y);
     }
     pointyPolygon.emplace_back(pointyPolygon.front());
-
+/*
     for(int i = 0; i < 16; i++)
         S.emplace_back(rand()%32);
     for(int i = 0; i < 16; i++)
         T.emplace_back(rand()%64);//16);
     for(int i = 0; i < 16; i++)
         C.emplace_back(rand()%32);
+*/
+    Timer T("PointyMake");
 
-    int sz = 64;
     TESS::QuadTreeTesselator QTT(sz,sz,{0,0},1);
     
     QTT.addLine(pointyPolygon,1);
     
     QTT.triangulate();
-
+/*
     sf::Color polyColor = sf::Color(128,0,0);
     sf::Color bgColor = sf::Color(0,0,0);
     
@@ -160,8 +179,8 @@ int main()
         window.setView(camera.getView());
         window.clear(sf::Color(224,224,224));//sf::Color(32,32,32));
         window.draw(triangles.data(),triangles.size(),sf::Triangles);
-        window.draw(lineShape.data(),lineShape.size(),sf::LineStrip);
-        window.draw(debugLines.data(),debugLines.size(),sf::Lines);
+//        window.draw(lineShape.data(),lineShape.size(),sf::LineStrip);
+//        window.draw(debugLines.data(),debugLines.size(),sf::Lines);
         window.display();
 
         window.waitEvent(event);
@@ -173,6 +192,6 @@ int main()
             window.close();
         camera.handleEvent(event);
     }
-
+*/
     return 0;
 }
