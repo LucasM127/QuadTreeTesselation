@@ -12,7 +12,7 @@ Input criterion:
   
  Creates a static mesh geometry with discrete coordinates.
  
- The quadtree algorithm part is pretty nifty though.  Included is a test showing neighbour detection capabilities based on this paper: http://www.lcad.icmc.usp.br/~jbatista/procimg/quadtree_neighbours.pdf  (Play around with the macros in DQT.cpp with that one.)
+ The quad tree is now using cached neighbours as that tested faster.  Still you can refer to http://www.lcad.icmc.usp.br/~jbatista/procimg/quadtree_neighbours.pdf as it is neat.
  
 Here's an example scene.
 
