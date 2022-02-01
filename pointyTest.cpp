@@ -132,22 +132,22 @@ int main()
         pointyPolygon.emplace_back(x,y);
     }
     pointyPolygon.emplace_back(pointyPolygon.front());
-/*
+
     for(int i = 0; i < 16; i++)
         S.emplace_back(rand()%32);
     for(int i = 0; i < 16; i++)
         T.emplace_back(rand()%64);//16);
     for(int i = 0; i < 16; i++)
         C.emplace_back(rand()%32);
-*/
-    Timer T("PointyMake");
+
+    //Timer T("PointyMake");
 
     TESS::QuadTreeTesselator QTT(sz,sz,{0,0},1);
     
     QTT.addLine(pointyPolygon,1);
     
     QTT.triangulate();
-/*
+
     sf::Color polyColor = sf::Color(128,0,0);
     sf::Color bgColor = sf::Color(0,0,0);
     
@@ -192,6 +192,6 @@ int main()
             window.close();
         camera.handleEvent(event);
     }
-*/
+
     return 0;
 }
