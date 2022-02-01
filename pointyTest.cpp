@@ -47,63 +47,108 @@ void drawRegion(const TESS::QuadTreeTesselator &QTT, const unsigned int id, cons
 }
 
 //living on the edge
-void debugDraw(const DQT::QuadTree &QT, const std::vector<TESS::CellInfo> &cellInfos, const std::vector<const DQT::Node*> &lineNodes, std::vector<sf::Vertex> &lines)
+void debugDraw(const TESS::QuadTree &QT, const std::vector<TESS::CellInfo> &cellInfos, const std::vector<const TESS::Node*> &lineNodes, std::vector<sf::Vertex> &tris)
 {
-    float o = 0.05f;
-
+    sf::Color goodColor = sf::Color(0,255,0,128);
+    sf::Color badColor = sf::Color(255,0,0,128);
     //the dependencies are a bit wonky too
     //if neighbour draw green, else draw red line
     for(auto pnode : lineNodes)
     {
         auto C = cellInfos[pnode->id];
-        DQT::Box n = QT.calcBounds(*pnode);
-        Point sw(n.x+o,n.y+o);
-        Point se(n.x+n.sz-o,n.y+o);
-        Point nw(n.x+o,n.y+n.sz-o);
-        Point ne(n.x+n.sz-o,n.y+n.sz-o);
+        TESS::Box n = QT.calcBounds(*pnode);
+        float o = 0.25f;//n.sz / 4.f;
+        Point sw_in(n.x+o,n.y+o);
+        Point se_in(n.x+n.sz-o,n.y+o);
+        Point nw_in(n.x+o,n.y+n.sz-o);
+        Point ne_in(n.x+n.sz-o,n.y+n.sz-o);
+        Point sw(n.x,n.y);
+        Point se(n.x+n.sz,n.y);
+        Point nw(n.x,n.y+n.sz);
+        Point ne(n.x+n.sz,n.y+n.sz);
 
-        if(C.neighbourIds[TESS::DIR::UP] != TESS::INVALID_ID)
+        if(C.neighbourIds[TESS::DIR::NORTH] != TESS::INVALID_ID)
         {
-            lines.emplace_back(nw,sf::Color::Green);
-            lines.emplace_back(ne,sf::Color::Green);
+            tris.emplace_back(nw,goodColor);
+            tris.emplace_back(ne,goodColor);
+            tris.emplace_back(nw_in,goodColor);
+
+            tris.emplace_back(nw_in,goodColor);
+            tris.emplace_back(ne,goodColor);
+            tris.emplace_back(ne_in,goodColor);
         }
         else
         {
-            lines.emplace_back(nw,sf::Color::Red);
-            lines.emplace_back(ne,sf::Color::Red);
+            tris.emplace_back(nw,badColor);
+            tris.emplace_back(ne,badColor);
+            tris.emplace_back(nw_in,badColor);
+
+            tris.emplace_back(nw_in,badColor);
+            tris.emplace_back(ne,badColor);
+            tris.emplace_back(ne_in,badColor);
         }
 
-        if(C.neighbourIds[TESS::DIR::LEFT] != TESS::INVALID_ID)
+        if(C.neighbourIds[TESS::DIR::WEST] != TESS::INVALID_ID)
         {
-            lines.emplace_back(nw,sf::Color::Green);
-            lines.emplace_back(sw,sf::Color::Green);
+            tris.emplace_back(nw,goodColor);
+            tris.emplace_back(sw,goodColor);
+            tris.emplace_back(nw_in,goodColor);
+
+            tris.emplace_back(nw_in,goodColor);
+            tris.emplace_back(sw,goodColor);
+            tris.emplace_back(sw_in,goodColor);
         }
         else
         {
-            lines.emplace_back(nw,sf::Color::Red);
-            lines.emplace_back(sw,sf::Color::Red);
+            tris.emplace_back(nw,badColor);
+            tris.emplace_back(sw,badColor);
+            tris.emplace_back(nw_in,badColor);
+
+            tris.emplace_back(nw_in,badColor);
+            tris.emplace_back(sw,badColor);
+            tris.emplace_back(sw_in,badColor);
         }
 
-        if(C.neighbourIds[TESS::DIR::DOWN] != TESS::INVALID_ID)
+        if(C.neighbourIds[TESS::DIR::SOUTH] != TESS::INVALID_ID)
         {
-            lines.emplace_back(sw,sf::Color::Green);
-            lines.emplace_back(se,sf::Color::Green);
+            tris.emplace_back(se,goodColor);
+            tris.emplace_back(sw,goodColor);
+            tris.emplace_back(se_in,goodColor);
+
+            tris.emplace_back(se_in,goodColor);
+            tris.emplace_back(sw,goodColor);
+            tris.emplace_back(sw_in,goodColor);
         }
         else
         {
-            lines.emplace_back(sw,sf::Color::Red);
-            lines.emplace_back(se,sf::Color::Red);
+            tris.emplace_back(se,badColor);
+            tris.emplace_back(sw,badColor);
+            tris.emplace_back(se_in,badColor);
+
+            tris.emplace_back(se_in,badColor);
+            tris.emplace_back(sw,badColor);
+            tris.emplace_back(sw_in,badColor);
         }
 
-        if(C.neighbourIds[TESS::DIR::RIGHT] != TESS::INVALID_ID)
+        if(C.neighbourIds[TESS::DIR::EAST] != TESS::INVALID_ID)
         {
-            lines.emplace_back(se,sf::Color::Green);
-            lines.emplace_back(ne,sf::Color::Green);
+            tris.emplace_back(se,goodColor);
+            tris.emplace_back(ne,goodColor);
+            tris.emplace_back(se_in,goodColor);
+
+            tris.emplace_back(se_in,goodColor);
+            tris.emplace_back(ne,goodColor);
+            tris.emplace_back(ne_in,goodColor);
         }
         else
         {
-            lines.emplace_back(se,sf::Color::Red);
-            lines.emplace_back(ne,sf::Color::Red);
+            tris.emplace_back(se,badColor);
+            tris.emplace_back(ne,badColor);
+            tris.emplace_back(se_in,badColor);
+
+            tris.emplace_back(se_in,badColor);
+            tris.emplace_back(ne,badColor);
+            tris.emplace_back(ne_in,badColor);
         }
     }
 }
@@ -140,13 +185,17 @@ int main()
     for(int i = 0; i < 16; i++)
         C.emplace_back(rand()%32);
 
-    //Timer T("PointyMake");
 
+//    Timer T("PointyMake");
     TESS::QuadTreeTesselator QTT(sz,sz,{0,0},1);
     
     QTT.addLine(pointyPolygon,1);
     
     QTT.triangulate();
+
+    std::cout<<QTT.getPoints().size()<<" points generated\n";
+    std::cout<<QTT.getCellTriIds(0).size()<<" & "<<QTT.getCellTriIds(1).size()<<" cells generated\n";
+    std::cout<<QTT.getTriangles(0).size()<<" & "<<QTT.getTriangles(1).size()<<" triangle points generated\n";
 
     sf::Color polyColor = sf::Color(128,0,0);
     sf::Color bgColor = sf::Color(0,0,0);
@@ -169,7 +218,7 @@ int main()
     view.setSize(static_cast<float>(sz)+1.f,static_cast<float>(sz)*-1.f - 1.f);
     window.setView(view);
 
-    glLineWidth(4);
+//    glLineWidth(4);
 
     Camera camera(window.getSize(),view);
 
@@ -179,8 +228,8 @@ int main()
         window.setView(camera.getView());
         window.clear(sf::Color(224,224,224));//sf::Color(32,32,32));
         window.draw(triangles.data(),triangles.size(),sf::Triangles);
-//        window.draw(lineShape.data(),lineShape.size(),sf::LineStrip);
-//        window.draw(debugLines.data(),debugLines.size(),sf::Lines);
+        window.draw(lineShape.data(),lineShape.size(),sf::LineStrip);
+        window.draw(debugLines.data(),debugLines.size(),sf::Triangles);
         window.display();
 
         window.waitEvent(event);

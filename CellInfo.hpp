@@ -3,25 +3,11 @@
 
 #include "Vec2.hpp"
 #include <vector>
-#include <cstdint>
+
+#include "Consts.hpp"
 
 namespace TESS
 {
-
-typedef uint32_t ID;
-typedef uint32_t PointId;
-typedef uint32_t SZ;
-
-extern const ID INVALID_ID;
-extern const ID EMPTY_SPACE_ID;
-
-enum DIR : unsigned int
-{
-    UP = 0,
-    LEFT,
-    DOWN,
-    RIGHT
-};
 
 struct CellInfo
 {

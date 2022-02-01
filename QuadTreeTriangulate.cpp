@@ -1,10 +1,14 @@
 #include "QuadTreeTesselator.hpp"
 #include "TriangulateCellNode.hpp"
 
-#include "Quadrants.hpp"
+#include "Consts.hpp"
 
 namespace TESS
 {
+
+//static const SZ NUM_CELL_POINTS_PER_REGION = ###;
+//static const SZ NUM_POINTS = ###;
+//static const SZ NUM_TRI_POINTS_PER_REGION = ###;
 
 void QuadTreeTesselator::triangulate()
 {
@@ -15,7 +19,15 @@ void QuadTreeTesselator::triangulate()
             m_quadTree.subdivide(p.x,p.y);
         }
     }
-
+/*
+    //Doesn't really make much difference but a slight difference (speed wise) not worth it?
+    for(auto r : m_regions)
+    {
+        m_convexTriangleIds[r].reserve(NUM_CELL_POINTS_PER_REGION);
+        m_polygons[r].reserve(NUM_TRI_POINTS_PER_REGION);
+    }
+    m_points.reserve(NUM_POINTS);
+*/
     m_cellInfos.resize(m_quadTree.numLeaves());
 
     genGridPoints(m_quadTree.root());
@@ -30,7 +42,7 @@ void QuadTreeTesselator::triangulate()
     removeDuplicateLinePoints();
       
     for(const auto &node : m_lineNodes)
-    {//nodeid 1 is issue
+    {
         CellInfo &C = m_cellInfos[node->id];//m_quadTree.data(nodeId);
 
         triangulateCellNode(C);
@@ -61,53 +73,51 @@ void QuadTreeTesselator::triangulate()
     }
 
     if(m_lineNodes.size() == 0)
-        floodFillTriangulate(m_quadTree.at(0,0),TESS::EMPTY_SPACE_ID,DIR::LEFT);
+        floodFillTriangulate(m_quadTree.at(0,0),TESS::EMPTY_SPACE_ID,DIR::WEST);
     for(auto node : m_lineNodes)
     {
         const CellInfo &C = m_cellInfos[node->id];
         
-        const DQT::Node &northNode = m_quadTree.neighbour(*node,DQT::DIR::NORTH);
-        const DQT::Node &southNode = m_quadTree.neighbour(*node,DQT::DIR::SOUTH);
-        const DQT::Node &eastNode = m_quadTree.neighbour(*node,DQT::DIR::EAST);
-        const DQT::Node &westNode = m_quadTree.neighbour(*node,DQT::DIR::WEST);       
+        const Node &northNode = m_quadTree.neighbour(*node,DIR::NORTH);
+        const Node &southNode = m_quadTree.neighbour(*node,DIR::SOUTH);
+        const Node &eastNode  = m_quadTree.neighbour(*node,DIR::EAST);
+        const Node &westNode  = m_quadTree.neighbour(*node,DIR::WEST);       
 
-        if(C.neighbourIds[DIR::UP] != INVALID_ID && northNode.id != DQT::INVALID_ID)
+        if(C.neighbourIds[DIR::NORTH] != INVALID_ID && northNode.id != INVALID_ID)
         {
             if(northNode.isLeaf)
-                floodFillTriangulate(northNode,C.neighbourIds[DIR::UP],DIR::DOWN);
+                floodFillTriangulate(northNode,C.neighbourIds[DIR::NORTH],DIR::SOUTH);
             else
-                floodFillTriangulate(m_quadTree.sw(northNode), C.neighbourIds[DIR::UP],DIR::DOWN);
+                floodFillTriangulate(m_quadTree.sw(northNode), C.neighbourIds[DIR::NORTH],DIR::SOUTH);
         }
-        if(C.neighbourIds[DIR::DOWN] != INVALID_ID && southNode.id != DQT::INVALID_ID)
+        if(C.neighbourIds[DIR::SOUTH] != INVALID_ID && southNode.id != INVALID_ID)
         {
             if(southNode.isLeaf)
-                floodFillTriangulate(southNode,C.neighbourIds[DIR::DOWN],DIR::UP);
+                floodFillTriangulate(southNode,C.neighbourIds[DIR::SOUTH],DIR::NORTH);
             else
-                floodFillTriangulate(m_quadTree.nw(southNode), C.neighbourIds[DIR::DOWN],DIR::UP);
+                floodFillTriangulate(m_quadTree.nw(southNode), C.neighbourIds[DIR::SOUTH],DIR::NORTH);
         }
-        if(C.neighbourIds[DIR::LEFT] != INVALID_ID && westNode.id != DQT::INVALID_ID)
+        if(C.neighbourIds[DIR::WEST] != INVALID_ID && westNode.id != INVALID_ID)
         {
             if(westNode.isLeaf)
-                floodFillTriangulate(westNode,C.neighbourIds[DIR::LEFT],DIR::RIGHT);
+                floodFillTriangulate(westNode,C.neighbourIds[DIR::WEST],DIR::EAST);
             else
-                floodFillTriangulate(m_quadTree.se(westNode), C.neighbourIds[DIR::LEFT],DIR::RIGHT);
+                floodFillTriangulate(m_quadTree.se(westNode), C.neighbourIds[DIR::WEST],DIR::EAST);
         }
-        if(C.neighbourIds[DIR::RIGHT] != INVALID_ID && eastNode.id != DQT::INVALID_ID)
+        if(C.neighbourIds[DIR::EAST] != INVALID_ID && eastNode.id != INVALID_ID)
         {
             if(eastNode.isLeaf)
-                floodFillTriangulate(eastNode,C.neighbourIds[DIR::RIGHT],DIR::LEFT);
+                floodFillTriangulate(eastNode,C.neighbourIds[DIR::EAST],DIR::WEST);
             else
-                floodFillTriangulate(m_quadTree.sw(eastNode), C.neighbourIds[DIR::RIGHT],DIR::LEFT);
+                floodFillTriangulate(m_quadTree.sw(eastNode), C.neighbourIds[DIR::EAST],DIR::WEST);
         }
 
     }
 }
 
-//oops add polygon Id but later...
-void QuadTreeTesselator::floodFillTriangulate(const DQT::Node &node, ID polygonId, DIR skipDir)
+void QuadTreeTesselator::floodFillTriangulate(const Node &node, ID polygonId, DIR skipDir)
 {
-///
-    if(node.id == DQT::INVALID_ID)
+    if(node.id == INVALID_ID)
         return;
 
     CellInfo &C = m_cellInfos[node.id];//m_quadTree.data(nodeId);
@@ -123,10 +133,10 @@ void QuadTreeTesselator::floodFillTriangulate(const DQT::Node &node, ID polygonI
     PointId se = C.cornerIds[QUADRANT::SE];
     PointId sw = C.cornerIds[QUADRANT::SW];
 
-    PointId up = C.steinerIds[DIR::UP];
-    PointId right = C.steinerIds[DIR::RIGHT];
-    PointId down = C.steinerIds[DIR::DOWN];
-    PointId left = C.steinerIds[DIR::LEFT];
+    PointId up = C.steinerIds[DIR::NORTH];
+    PointId right = C.steinerIds[DIR::EAST];
+    PointId down = C.steinerIds[DIR::SOUTH];
+    PointId left = C.steinerIds[DIR::WEST];
 
     int k = 0;
     if(up != INVALID_ID) k += 1;
@@ -248,38 +258,38 @@ void QuadTreeTesselator::floodFillTriangulate(const DQT::Node &node, ID polygonI
         break;
     }
 
-    const DQT::Node &northNode = m_quadTree.neighbour(node,DQT::DIR::NORTH);
-    const DQT::Node &southNode = m_quadTree.neighbour(node,DQT::DIR::SOUTH);
-    const DQT::Node &eastNode = m_quadTree.neighbour(node,DQT::DIR::EAST);
-    const DQT::Node &westNode = m_quadTree.neighbour(node,DQT::DIR::WEST);
+    const Node &northNode = m_quadTree.neighbour(node,DIR::NORTH);
+    const Node &southNode = m_quadTree.neighbour(node,DIR::SOUTH);
+    const Node &eastNode  = m_quadTree.neighbour(node,DIR::EAST);
+    const Node &westNode  = m_quadTree.neighbour(node,DIR::WEST);
 
-    if(northNode.id != DQT::INVALID_ID && skipDir != DIR::UP)
+    if(northNode.id != INVALID_ID && skipDir != DIR::NORTH)
     {
         if(northNode.isLeaf)
-            floodFillTriangulate(northNode,polygonId,DIR::DOWN);
+            floodFillTriangulate(northNode,polygonId,DIR::SOUTH);
         else
-            floodFillTriangulate(m_quadTree.sw(northNode), polygonId,DIR::DOWN);
+            floodFillTriangulate(m_quadTree.sw(northNode), polygonId,DIR::SOUTH);
     }
-    if(southNode.id != DQT::INVALID_ID && skipDir != DIR::DOWN)
+    if(southNode.id != INVALID_ID && skipDir != DIR::SOUTH)
     {
         if(southNode.isLeaf)
-            floodFillTriangulate(southNode,polygonId,DIR::UP);
+            floodFillTriangulate(southNode,polygonId,DIR::NORTH);
         else
-            floodFillTriangulate(m_quadTree.nw(southNode), polygonId,DIR::UP);
+            floodFillTriangulate(m_quadTree.nw(southNode), polygonId,DIR::NORTH);
     }
-    if(westNode.id != DQT::INVALID_ID && skipDir != DIR::LEFT)
+    if(westNode.id != INVALID_ID && skipDir != DIR::WEST)
     {
         if(westNode.isLeaf)
-            floodFillTriangulate(westNode,polygonId,DIR::RIGHT);
+            floodFillTriangulate(westNode,polygonId,DIR::EAST);
         else
-            floodFillTriangulate(m_quadTree.se(westNode), polygonId,DIR::RIGHT);
+            floodFillTriangulate(m_quadTree.se(westNode), polygonId,DIR::EAST);
     }
-    if(eastNode.id != DQT::INVALID_ID && skipDir != DIR::RIGHT)
+    if(eastNode.id != INVALID_ID && skipDir != DIR::EAST)
     {
         if(eastNode.isLeaf)
-            floodFillTriangulate(eastNode,polygonId,DIR::LEFT);
+            floodFillTriangulate(eastNode,polygonId,DIR::WEST);
         else
-            floodFillTriangulate(m_quadTree.sw(eastNode), polygonId,DIR::LEFT);
+            floodFillTriangulate(m_quadTree.sw(eastNode), polygonId,DIR::WEST);
     }
 }
 

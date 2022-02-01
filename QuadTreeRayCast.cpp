@@ -1,5 +1,5 @@
 #include "QuadTreeTesselator.hpp"
-#include "Quadrants.hpp"
+#include "Consts.hpp"
 #include <cassert>
 #include <cmath>
 
@@ -19,9 +19,12 @@ static Point snap(const Point &p, const Vec2 &offset, const float stepSz)
 void QuadTreeTesselator::addLine(const std::vector<Point> &rline, ID rightId, ID leftId)
 {
     std::vector<Point> line;
+    line.reserve(rline.size());
     for(auto &p : rline)
         line.emplace_back(snap(p,m_offset,m_stepSz));
     m_lineDatas.push_back({std::move(line),rightId,leftId});
+    //m_regions.insert(rightId);
+    //m_regions.insert(leftId);
 }
 
 //assume line is 'IN Bounds' Clipping is out of this algorithms scope.
@@ -57,8 +60,7 @@ void QuadTreeTesselator::genLinePoints(QuadTreeTesselator::LineData &LD)
     return;
 }
 
-//TODO: Remove the requirement to use epsilon
-//Option: end when hit end cell?
+//Exit condition is SCARY but it hasn't failed me yet.  Fix one day.
 void QuadTreeTesselator::castRay(const Point &a, const Point &b, ID rightPolygonId, ID leftPolygonId, PointId &startId, PointId &endId)
 {
     //Has to start and end on a cell wall
@@ -70,10 +72,7 @@ void QuadTreeTesselator::castRay(const Point &a, const Point &b, ID rightPolygon
 
     const float dDx = 1.f / fabsf(dx);
     const float dDy = 1.f / fabsf(dy);
-
-    const float m  = dy/dx;
-    const float m_ = dx/dy;
-//play with epsilon... (?) //REMOVE
+    
     const float epsilon = 0.000001f;//~ 6 digits precision so ~100,000 max grid size i guess (?)
 
     float distX = 0.f;
@@ -89,14 +88,14 @@ void QuadTreeTesselator::castRay(const Point &a, const Point &b, ID rightPolygon
 
     while (true)
     {
-        const DQT::Node &node = m_quadTree.at(p.x,p.y,headsRight,headsUp);
+        const Node &node = m_quadTree.at(p.x,p.y,headsRight,headsUp);
         
-        if(node.id == DQT::INVALID_ID)
+        if(node.id == INVALID_ID)
         {
             endId = INVALID_ID;
             return;//the line went out of bounds of the gridMap
         }
-        DQT::Box n = m_quadTree.calcBounds(node);
+        Box n = m_quadTree.calcBounds(node);
 
         float min_x = n.x;
         float max_x = n.x + n.sz;
@@ -214,16 +213,14 @@ void QuadTreeTesselator::castRay(const Point &a, const Point &b, ID rightPolygon
                 a_id = C.cornerIds[QUADRANT::SE];
             else if(a_normalized == Point(1,1))
                 a_id = C.cornerIds[QUADRANT::NE];
-//#ifdef INCLUDE_STEINER_POINTS
-            else if(a_normalized == Point(0.5f,1.0f) && C.steinerIds[DIR::UP] != INVALID_ID)
-                a_id = C.steinerIds[DIR::UP];
-            else if(a_normalized == Point(0.0f,0.5f) && C.steinerIds[DIR::LEFT] != INVALID_ID)
-                a_id = C.steinerIds[DIR::LEFT];
-            else if(a_normalized == Point(0.5f,0.0f) && C.steinerIds[DIR::DOWN] != INVALID_ID)
-                a_id = C.steinerIds[DIR::DOWN];
-            else if(a_normalized == Point(1.0f,0.5f) && C.steinerIds[DIR::RIGHT] != INVALID_ID)
-                a_id = C.steinerIds[DIR::RIGHT];
-//#endif
+            else if(a_normalized == Point(0.5f,1.0f) && C.steinerIds[DIR::NORTH] != INVALID_ID)
+                a_id = C.steinerIds[DIR::NORTH];
+            else if(a_normalized == Point(0.0f,0.5f) && C.steinerIds[DIR::WEST] != INVALID_ID)
+                a_id = C.steinerIds[DIR::WEST];
+            else if(a_normalized == Point(0.5f,0.0f) && C.steinerIds[DIR::SOUTH] != INVALID_ID)
+                a_id = C.steinerIds[DIR::SOUTH];
+            else if(a_normalized == Point(1.0f,0.5f) && C.steinerIds[DIR::EAST] != INVALID_ID)
+                a_id = C.steinerIds[DIR::EAST];
             else //can remove duplicate line points later if it is an issue with removeDuplicateLinePoints() function
             {
                 a_id = m_points.size();
@@ -247,14 +244,14 @@ void QuadTreeTesselator::castRay(const Point &a, const Point &b, ID rightPolygon
             b_id = C.cornerIds[QUADRANT::SE];
         else if(b_normalized == Point(1,1))
             b_id = C.cornerIds[QUADRANT::NE];
-        else if(b_normalized == Point(0.5f,1.0f) && C.steinerIds[DIR::UP] != INVALID_ID)
-            b_id = C.steinerIds[DIR::UP];
-        else if(b_normalized == Point(0.0f,0.5f) && C.steinerIds[DIR::LEFT] != INVALID_ID)
-            b_id = C.steinerIds[DIR::LEFT];
-        else if(b_normalized == Point(0.5f,0.0f) && C.steinerIds[DIR::DOWN] != INVALID_ID)
-            b_id = C.steinerIds[DIR::DOWN];
-        else if(b_normalized == Point(1.0f,0.5f) && C.steinerIds[DIR::RIGHT] != INVALID_ID)
-            b_id = C.steinerIds[DIR::RIGHT];
+        else if(b_normalized == Point(0.5f,1.0f) && C.steinerIds[DIR::NORTH] != INVALID_ID)
+            b_id = C.steinerIds[DIR::NORTH];
+        else if(b_normalized == Point(0.0f,0.5f) && C.steinerIds[DIR::WEST] != INVALID_ID)
+            b_id = C.steinerIds[DIR::WEST];
+        else if(b_normalized == Point(0.5f,0.0f) && C.steinerIds[DIR::SOUTH] != INVALID_ID)
+            b_id = C.steinerIds[DIR::SOUTH];
+        else if(b_normalized == Point(1.0f,0.5f) && C.steinerIds[DIR::EAST] != INVALID_ID)
+            b_id = C.steinerIds[DIR::EAST];
         else
         {
             b_id = m_points.size();
