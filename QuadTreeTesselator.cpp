@@ -151,7 +151,8 @@ void QuadTreeTesselator::genGridPoints(const DQT::Node &node)
         if(e.y != B.y)
         {
             C.cornerIds[QUADRANT::SE] = m_points.size();
-            m_cellInfos[southNode.id].cornerIds[QUADRANT::NE] = m_points.size();
+            if(southNode.id != DQT::INVALID_ID)
+                m_cellInfos[southNode.id].cornerIds[QUADRANT::NE] = m_points.size();
             m_points.emplace_back(B.x+B.sz,B.y);
         }
     }
@@ -178,7 +179,8 @@ void QuadTreeTesselator::genGridPoints(const DQT::Node &node)
         if(n.x != B.x)
         {
             C.cornerIds[QUADRANT::NW] = m_points.size();
-            m_cellInfos[westNode.id].cornerIds[QUADRANT::NE] = m_points.size();
+            if(westNode.id != DQT::INVALID_ID)
+                m_cellInfos[westNode.id].cornerIds[QUADRANT::NE] = m_points.size();
             m_points.emplace_back(B.x,B.y+B.sz);
         }
     }

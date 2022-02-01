@@ -102,6 +102,8 @@ int main()
     for(int i = 0; i < n; ++i)
         points.push_back({rand()%sz,rand()%sz});
 
+//    for(int i = 0; i < 2; ++i)
+//    quadTree.subdivide(points[i].x,points[i].y);
     for(auto &p : points)
         quadTree.subdivide(p.x,p.y);
 
