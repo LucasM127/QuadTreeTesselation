@@ -7,12 +7,12 @@ struct Point
     int x,y;
 };
 
-void drawNode(DQT::QuadTree &tree, const DQT::Node &node, std::vector<sf::Vertex> &shape)
+void drawNode(TESS::QuadTree &tree, const TESS::Node &node, std::vector<sf::Vertex> &shape)
 {
     int v = rand()%128;
     sf::Color color = sf::Color(v,v,v,128);
 
-    DQT::Box n = tree.calcBounds(node);
+    TESS::Box n = tree.calcBounds(node);
 
     sf::Vector2f a(n.x,n.y);
     sf::Vector2f b(n.x,n.y+n.sz);
@@ -29,7 +29,7 @@ void drawNode(DQT::QuadTree &tree, const DQT::Node &node, std::vector<sf::Vertex
     shape.emplace_back(a,color);
 }
 
-void drawTree(DQT::QuadTree &tree, const DQT::Node &node, std::vector<sf::Vertex> &shape)
+void drawTree(TESS::QuadTree &tree, const TESS::Node &node, std::vector<sf::Vertex> &shape)
 {
     if(!node.isLeaf)
     {
@@ -43,9 +43,9 @@ void drawTree(DQT::QuadTree &tree, const DQT::Node &node, std::vector<sf::Vertex
     drawNode(tree,node,shape);
 }
 
-void drawNodeTris(DQT::QuadTree &tree, const DQT::Node &node, std::vector<sf::Vertex> &shape, sf::Color color)
+void drawNodeTris(TESS::QuadTree &tree, const TESS::Node &node, std::vector<sf::Vertex> &shape, sf::Color color)
 {
-    DQT::Box n = tree.calcBounds(node);
+    TESS::Box n = tree.calcBounds(node);
 
     sf::Vector2f a(n.x,n.y);
     sf::Vector2f b(n.x,n.y+n.sz);
@@ -60,7 +60,7 @@ void drawNodeTris(DQT::QuadTree &tree, const DQT::Node &node, std::vector<sf::Ve
     shape.emplace_back(a,color);
 }
 
-void drawNeighbours(DQT::QuadTree &tree, const DQT::Node &node, std::vector<sf::Vertex> &shape)
+void drawNeighbours(TESS::QuadTree &tree, const TESS::Node &node, std::vector<sf::Vertex> &shape)
 {
     const sf::Color northColor = sf::Color(192,64,64,192);
     const sf::Color eastColor  = sf::Color(64,64,192,192);
@@ -69,20 +69,20 @@ void drawNeighbours(DQT::QuadTree &tree, const DQT::Node &node, std::vector<sf::
 
     shape.clear();
 
-    if(node.id == DQT::INVALID_ID)
+    if(node.id == TESS::INVALID_ID)
         return;
     
-    const DQT::Node &northNode = tree.neighbour(node,DQT::DIR::NORTH);
-    const DQT::Node &eastNode = tree.neighbour(node,DQT::DIR::EAST);
-    const DQT::Node &southNode = tree.neighbour(node,DQT::DIR::SOUTH);
-    const DQT::Node &westNode = tree.neighbour(node,DQT::DIR::WEST);
-    if(northNode.id != DQT::INVALID_ID)
+    const TESS::Node &northNode = tree.neighbour(node,TESS::DIR::NORTH);
+    const TESS::Node &eastNode = tree.neighbour(node,TESS::DIR::EAST);
+    const TESS::Node &southNode = tree.neighbour(node,TESS::DIR::SOUTH);
+    const TESS::Node &westNode = tree.neighbour(node,TESS::DIR::WEST);
+    if(northNode.id != TESS::INVALID_ID)
         drawNodeTris(tree,northNode,shape,northColor);
-    if(eastNode.id != DQT::INVALID_ID)
+    if(eastNode.id != TESS::INVALID_ID)
         drawNodeTris(tree,eastNode,shape,eastColor);
-    if(southNode.id != DQT::INVALID_ID)
+    if(southNode.id != TESS::INVALID_ID)
         drawNodeTris(tree,southNode,shape,southColor);
-    if(westNode.id != DQT::INVALID_ID)
+    if(westNode.id != TESS::INVALID_ID)
         drawNodeTris(tree,westNode,shape,westColor);
 }
 
@@ -91,7 +91,7 @@ int main()
     srand(0);//time(nullptr));
     int sz = 16;
     int n = 25;
-    DQT::QuadTree quadTree(0,sz,0,sz);
+    TESS::QuadTree quadTree(0,sz,0,sz);
 
     std::vector<Point> points;
     /*{
@@ -130,7 +130,7 @@ int main()
         {{bgSz,bgSz},bgColor}
     };
 
-    DQT::NodeId mouseNodeId;
+    TESS::NodeId mouseNodeId;
 
     while (window.isOpen())
     {
@@ -152,7 +152,7 @@ int main()
         {
             sf::Vector2i mouseCoord(event.mouseMove.x,event.mouseMove.y);
             sf::Vector2f mousePos = window.mapPixelToCoords(mouseCoord);
-            const DQT::Node &node = quadTree.at(mousePos.x,mousePos.y);
+            const TESS::Node &node = quadTree.at(mousePos.x,mousePos.y);
             if(node.id != mouseNodeId)
             {
                 mouseNodeId = node.id;

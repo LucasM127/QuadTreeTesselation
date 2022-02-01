@@ -29,9 +29,9 @@ public:
     void triangulate();
 
 //debuggy ish
-    const DQT::QuadTree &getQT() const;
+    const QuadTree &getQT() const;
     const std::vector<CellInfo> &getCellInfos() const;
-    const std::vector<const DQT::Node*> &getLineNodes() const;
+    const std::vector<const Node*> &getLineNodes() const;
 
     const std::vector<Point> &getPoints() const;
     const std::vector<PointId> &getTriangles(const ID id) const;
@@ -49,27 +49,29 @@ private:
     const Vec2 m_offset;
     const float m_stepSz;
     SZ m_numGridPoints;
-    DQT::QuadTree m_quadTree;
+    QuadTree m_quadTree;
     std::vector<CellInfo> m_cellInfos;
 
     std::vector<PointId> m_nullVector;
 
     std::vector<Point> m_points;
-    std::vector<const DQT::Node*> m_lineNodes;
+    std::vector<const Node*> m_lineNodes;
     std::vector<LineData> m_lineDatas;
     std::unordered_map<ID,std::vector<PointId>> m_polygons;
     std::unordered_map<ID,std::vector<ID>> m_convexTriangleIds;//?
 
-    void genGridPoints(const DQT::Node &node);
+    void genGridPoints(const Node &node);
     void genLinePoints(LineData &LD);
 
     void removeDuplicateLinePoints();
     
     void castRay(const Point &a, const Point &b, ID id, ID id_out, PointId &startId, PointId &endId);
 
-    void floodFillTriangulate(const DQT::Node &node, ID polygonId, DIR skipDir);
+    void floodFillTriangulate(const Node &node, ID polygonId, DIR skipDir);
 };
 
 } //namespace TESS
 
 #endif //QUAD_TREE_TESSELATOR_HPP
+
+//std::set<ID> m_regions;

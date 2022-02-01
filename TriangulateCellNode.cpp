@@ -1,5 +1,4 @@
 #include "CellInfo.hpp"
-#include "Quadrants.hpp"
 #include <cassert>
 #include <algorithm>
 
@@ -12,9 +11,6 @@
 
 namespace TESS
 {
-
-const ID INVALID_ID = -1;
-const ID EMPTY_SPACE_ID = 0;//INVALID_ID - 1;
 
 //https://www.newcastle.edu.au/__data/assets/pdf_file/0019/22519/23_A-fast-algortithm-for-generating-constrained-Delaunay-triangulations.pdf
 bool isDelaunay(const Point &p1, const Point &p2, const Point &p3, const Point &p)
@@ -130,7 +126,7 @@ void addIfNotDuplicate(std::vector<BPoint> &concavePolygon, const BPoint &B)
         concavePolygon.push_back(B);
 }
 
-//TODO: REVAMP Bpoint logic... shouldn't have to have 2 separate lists to sort?????
+//not sure if there's a better way or not
 void triangulateCellNode(CellInfo &C)
 {
     std::vector<BPoint> pointList =
@@ -141,14 +137,14 @@ void triangulateCellNode(CellInfo &C)
         {{1.f,1.f}, BPoint::TYPE::FREE, C.cornerIds[QUADRANT::NE]}
     };
 #ifdef INCLUDE_STEINER_POINTS
-    if(C.steinerIds[DIR::UP] != INVALID_ID)
-        pointList.push_back({{.5f,1.f}, BPoint::TYPE::FREE, C.steinerIds[DIR::UP]});
-    if(C.steinerIds[DIR::LEFT] != INVALID_ID)
-        pointList.push_back({{0.f,.5f}, BPoint::TYPE::FREE, C.steinerIds[DIR::LEFT]});
-    if(C.steinerIds[DIR::DOWN] != INVALID_ID)
-        pointList.push_back({{.5f,0.f}, BPoint::TYPE::FREE, C.steinerIds[DIR::DOWN]});
-    if(C.steinerIds[DIR::RIGHT] != INVALID_ID)
-        pointList.push_back({{1.f,.5f}, BPoint::TYPE::FREE, C.steinerIds[DIR::RIGHT]});
+    if(C.steinerIds[DIR::NORTH] != INVALID_ID)
+        pointList.push_back({{.5f,1.f}, BPoint::TYPE::FREE, C.steinerIds[DIR::NORTH]});
+    if(C.steinerIds[DIR::WEST] != INVALID_ID)
+        pointList.push_back({{0.f,.5f}, BPoint::TYPE::FREE, C.steinerIds[DIR::WEST]});
+    if(C.steinerIds[DIR::SOUTH] != INVALID_ID)
+        pointList.push_back({{.5f,0.f}, BPoint::TYPE::FREE, C.steinerIds[DIR::SOUTH]});
+    if(C.steinerIds[DIR::EAST] != INVALID_ID)
+        pointList.push_back({{1.f,.5f}, BPoint::TYPE::FREE, C.steinerIds[DIR::EAST]});
 #endif
 
     std::vector<Line> lines;
@@ -199,7 +195,7 @@ void triangulateCellNode(CellInfo &C)
         }
         addIfNotDuplicate(concavePolygons[ctr],activeList.back());
         addIfNotDuplicate(concavePolygons[ctr],B);
-        activeList.back().type = BPoint::TYPE::FREE;//WHY?
+        activeList.back().type = BPoint::TYPE::FREE;//is there a better way?
         activeList.push_back(B);
         ++ctr;
     }
@@ -249,13 +245,13 @@ void triangulateCellNode(CellInfo &C)
     };
     
     if(isContinuous(topInterval))
-        C.neighbourIds[DIR::UP] = topInterval.front().val;
+        C.neighbourIds[DIR::NORTH] = topInterval.front().val;
     if(isContinuous(leftInterval))
-        C.neighbourIds[DIR::LEFT] = leftInterval.front().val;
+        C.neighbourIds[DIR::WEST] = leftInterval.front().val;
     if(isContinuous(bottomInterval))
-        C.neighbourIds[DIR::DOWN] = bottomInterval.front().val;
+        C.neighbourIds[DIR::SOUTH] = bottomInterval.front().val;
     if(isContinuous(rightInterval))
-        C.neighbourIds[DIR::RIGHT] = rightInterval.front().val;
+        C.neighbourIds[DIR::EAST] = rightInterval.front().val;
     }
 
     //fan delaunay triangulate.

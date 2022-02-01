@@ -1,5 +1,5 @@
 #include "TriangulateCellNode.hpp"
-#include "Quadrants.hpp"
+#include "Consts.hpp"
 
 #include <iostream>
 
@@ -26,10 +26,10 @@ void test(TESS::CellInfo &C)
         std::cout<<C.triangles[i]<<"-"<<C.triangles[i+1]<<"-"<<C.triangles[i+2]<<"\n";
     std::cout<<std::endl;
 
-    std::cout<<"Up Neighbour: "<<C.neighbourIds[TESS::DIR::UP]<<"\n";
-    std::cout<<"Down Neighbour: "<<C.neighbourIds[TESS::DIR::DOWN]<<"\n";
-    std::cout<<"Left Neighbour: "<<C.neighbourIds[TESS::DIR::LEFT]<<"\n";
-    std::cout<<"Right Neighbour: "<<C.neighbourIds[TESS::DIR::RIGHT]<<"\n";
+    std::cout<<"Up Neighbour: "<<C.neighbourIds[TESS::DIR::NORTH]<<"\n";
+    std::cout<<"Down Neighbour: "<<C.neighbourIds[TESS::DIR::SOUTH]<<"\n";
+    std::cout<<"Left Neighbour: "<<C.neighbourIds[TESS::DIR::WEST]<<"\n";
+    std::cout<<"Right Neighbour: "<<C.neighbourIds[TESS::DIR::EAST]<<"\n";
 }
 
 void diamondTest()
@@ -67,10 +67,10 @@ void test2()//in sceneTest not showing the triangle properly
     C.cornerIds[TESS::QUADRANT::SE] = 12;
     C.cornerIds[TESS::QUADRANT::NE] = 13;
 
-    C.steinerIds[TESS::DIR::UP] = 20;
-    C.steinerIds[TESS::DIR::LEFT] = 21;
-//    C.steinerIds[TESS::DIR::DOWN] = 22;
-    C.steinerIds[TESS::DIR::RIGHT] = 23;
+    C.steinerIds[TESS::DIR::NORTH] = 20;
+    C.steinerIds[TESS::DIR::WEST] = 21;
+//    C.steinerIds[TESS::DIR::SOUTH] = 22;
+    C.steinerIds[TESS::DIR::EAST] = 23;
 
     C.lines = 
     {
@@ -93,10 +93,10 @@ void test3()//from scenetest
     C.cornerIds[TESS::QUADRANT::SE] = 12;
     C.cornerIds[TESS::QUADRANT::NE] = 13;
 
-//    C.steinerIds[TESS::DIR::UP] = 20;
-//    C.steinerIds[TESS::DIR::LEFT] = 21;
-    C.steinerIds[TESS::DIR::DOWN] = 22;
-    C.steinerIds[TESS::DIR::RIGHT] = 23;
+//    C.steinerIds[TESS::DIR::NORTH] = 20;
+//    C.steinerIds[TESS::DIR::WEST] = 21;
+    C.steinerIds[TESS::DIR::SOUTH] = 22;
+    C.steinerIds[TESS::DIR::EAST] = 23;
 
     C.lines = 
     {
@@ -118,10 +118,10 @@ void test4()//from scenetest
     C.cornerIds[TESS::QUADRANT::SE] = 12;
     C.cornerIds[TESS::QUADRANT::NE] = 13;
 
-//    C.steinerIds[TESS::DIR::UP] = 20;
-//    C.steinerIds[TESS::DIR::LEFT] = 21;
-    C.steinerIds[TESS::DIR::DOWN] = 22;
-    C.steinerIds[TESS::DIR::RIGHT] = 23;
+//    C.steinerIds[TESS::DIR::NORTH] = 20;
+//    C.steinerIds[TESS::DIR::WEST] = 21;
+    C.steinerIds[TESS::DIR::SOUTH] = 22;
+    C.steinerIds[TESS::DIR::EAST] = 23;
 
     C.lines = 
     {
@@ -145,10 +145,10 @@ void test5()//Faily from pointyTest  not mapping a triangle properly
     C.cornerIds[TESS::QUADRANT::SE] = 12;
     C.cornerIds[TESS::QUADRANT::NE] = 13;
 
-    C.steinerIds[TESS::DIR::UP] = 20;
-    C.steinerIds[TESS::DIR::LEFT] = 21;
-//    C.steinerIds[TESS::DIR::DOWN] = 22;
-//    C.steinerIds[TESS::DIR::RIGHT] = 23;
+    C.steinerIds[TESS::DIR::NORTH] = 20;
+    C.steinerIds[TESS::DIR::WEST] = 21;
+//    C.steinerIds[TESS::DIR::SOUTH] = 22;
+//    C.steinerIds[TESS::DIR::EAST] = 23;
 
     C.lines = 
     {

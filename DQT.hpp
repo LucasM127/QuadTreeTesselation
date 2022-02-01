@@ -3,34 +3,11 @@
 
 #include <vector>
 #include <cassert>
-#include <cstdint>
+#include "Consts.hpp"
 
-namespace DQT
+namespace TESS
 {
 
-typedef uint32_t ID;
-typedef uint32_t NodeId;
-
-extern const ID INVALID_ID;
-
-enum DIR : int
-{
-    NORTH = 0,
-    EAST,
-    SOUTH,
-    WEST,
-    NONE
-};
-
-enum QUADRANT : int
-{
-    SW = 0,
-    SE,
-    NW,
-    NE
-};//hmmm?????
-
-//possibility: cache neighbours
 struct Node
 {
     Node(ID _id, ID _dirVec, uint8_t _depth, bool _isLeaf,
@@ -68,17 +45,15 @@ private:
     int m_maxDepth, m_maxSz;
     std::vector<Node> m_nodes;
     Node m_nullNode;
-
-    const Node &atDir(ID dirVec, int depth) const;
     
     NodeId _at(int px, int py, int targetDepth = 256) const;
-    NodeId _atDir(ID dirVec, int depth) const;
+
     void subdivide(NodeId nodeId);
     void balanceNeighbours(NodeId nodeId, DIR skipDir);
 
     void updateNeighbours(ID nodeId, ID thisId, DIR neighbourSide);
 };
 
-}//namespace DQT
+}//namespace TESS
 
 #endif //DISCRETIZED_QUADTREE_HPP
