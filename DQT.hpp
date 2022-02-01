@@ -13,23 +13,33 @@ typedef uint32_t NodeId;
 
 extern const ID INVALID_ID;
 
-enum class DIR
+enum DIR : int
 {
-    NONE,
-    NORTH,
+    NORTH = 0,
     EAST,
     SOUTH,
-    WEST
+    WEST,
+    NONE
 };
+
+enum QUADRANT : int
+{
+    SW = 0,
+    SE,
+    NW,
+    NE
+};//hmmm?????
 
 //possibility: cache neighbours
 struct Node
 {
-    Node(ID _id, ID _dirVec, uint8_t _depth, bool _isLeaf);
+    Node(ID _id, ID _dirVec, uint8_t _depth, bool _isLeaf,
+         ID northNeighbour = INVALID_ID, ID eastNeighbour = INVALID_ID, ID southNeighbour = INVALID_ID, ID westNeighbour = INVALID_ID);
     ID id;
     ID dirVec;
     uint8_t depth;
     bool isLeaf;
+    ID neighbours[4];
 };
 
 struct Box
@@ -65,6 +75,8 @@ private:
     NodeId _atDir(ID dirVec, int depth) const;
     void subdivide(NodeId nodeId);
     void balanceNeighbours(NodeId nodeId, DIR skipDir);
+
+    void updateNeighbours(ID nodeId, ID thisId, DIR neighbourSide);
 };
 
 }//namespace DQT

@@ -30,7 +30,7 @@ void QuadTreeTesselator::triangulate()
     removeDuplicateLinePoints();
       
     for(const auto &node : m_lineNodes)
-    {
+    {//nodeid 1 is issue
         CellInfo &C = m_cellInfos[node->id];//m_quadTree.data(nodeId);
 
         triangulateCellNode(C);

@@ -1,4 +1,4 @@
-CC = g++ -g -Wall
+CC = g++ -O2 #-g -Wall
 LIBS = -lsfml-system -lsfml-window -lsfml-graphics
 SFML_DIR = /home/lucas/Headers/SFML-2.5.1
 INC = -I $(SFML_DIR)/include

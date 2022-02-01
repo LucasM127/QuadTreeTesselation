@@ -11,9 +11,11 @@ const ID INVALID_ID = -1;
 //Don't use mask if want neighbours to wrap around on findNeighbours function
 const ID OUT_OF_BOUNDS_MASK = 0b11000000000000000000000000000000;
 
-Node::Node(ID _id, ID _dirVec, uint8_t _depth, bool _isLeaf) : id(_id), dirVec(_dirVec), depth(_depth), isLeaf(_isLeaf)
+Node::Node(ID _id, ID _dirVec, uint8_t _depth, bool _isLeaf, ID northNeighbour, ID eastNeighbour, ID southNeighbour, ID westNeighbour)
+          : id(_id), dirVec(_dirVec), depth(_depth), isLeaf(_isLeaf),
+            neighbours {northNeighbour,eastNeighbour,southNeighbour,westNeighbour}
 {}
-
+//obsoleted now ???
 static ID neighbourDirVec(ID k, int depth, DIR dir)
 {
     //http://www.lcad.icmc.usp.br/~jbatista/procimg/quadtree_neighbours.pdf
@@ -50,8 +52,12 @@ QuadTree::QuadTree(int min_x, int max_x, int min_y, int max_y) : m_numLeaves(0),
     }
     m_maxDepth = depth;
     m_maxSz = sz;
-    
+
+#ifdef DQT_WRAP_NEIGHBOURS
+    m_nodes.emplace_back(m_numLeaves,0,0,true,0,0,0,0);//self referential
+#else
     m_nodes.emplace_back(m_numLeaves,0,0,true);
+#endif
     ++m_numLeaves;
 }
 
@@ -121,6 +127,10 @@ const Node &QuadTree::at(float x, float y, bool headsRight, bool headsUp) const
 
 const Node &QuadTree::neighbour(const Node &node, DIR dir) const
 {
+    if(node.neighbours[dir] == INVALID_ID)
+        return m_nullNode;
+    return m_nodes[node.neighbours[dir]];
+
     ID dirVec = neighbourDirVec(node.dirVec, node.depth, dir);
 #ifndef DQT_WRAP_NEIGHBOURS
     if(dirVec & OUT_OF_BOUNDS_MASK)
@@ -227,10 +237,11 @@ void QuadTree::subdivide(int px, int py)
     while(modx != 0 && mody != 0)
 #endif
     {
+        subdivide(nodeId);
+
 #ifndef DQT_UNBALANCED_TREE
         balanceNeighbours(nodeId,DIR::NONE);
 #endif
-        subdivide(nodeId);
 
         n.sz /= 2;
         int k = 0;
@@ -252,86 +263,165 @@ void QuadTree::subdivide(int px, int py)
     }
 }
 
-void QuadTree::subdivide(NodeId nodeId)
+void QuadTree::updateNeighbours(ID nodeId, ID thisId, DIR neighbourSide)
+{
+    m_nodes[nodeId].neighbours[neighbourSide] = thisId;
+    if(m_nodes[nodeId].isLeaf)
+        return;
+    switch (neighbourSide)
+    {
+    case DIR::NORTH:
+        updateNeighbours(m_nodes[nodeId].id + QUADRANT::NW, thisId, neighbourSide);
+        updateNeighbours(m_nodes[nodeId].id + QUADRANT::NE, thisId, neighbourSide);
+        break;
+    case DIR::EAST:
+        updateNeighbours(m_nodes[nodeId].id + QUADRANT::NE, thisId, neighbourSide);
+        updateNeighbours(m_nodes[nodeId].id + QUADRANT::SE, thisId, neighbourSide);
+        break;
+    case DIR::SOUTH:
+        updateNeighbours(m_nodes[nodeId].id + QUADRANT::SW, thisId, neighbourSide);
+        updateNeighbours(m_nodes[nodeId].id + QUADRANT::SE, thisId, neighbourSide);
+        break;
+    case DIR::WEST:
+        updateNeighbours(m_nodes[nodeId].id + QUADRANT::NW, thisId, neighbourSide);
+        updateNeighbours(m_nodes[nodeId].id + QUADRANT::SW, thisId, neighbourSide);
+        break;
+    default:
+        break;
+    }
+};
+
+void QuadTree::subdivide(NodeId nodeId)//SW SE NW NE //neighbours N E S W
 {
     assert(m_nodes[nodeId].isLeaf == true);
-    m_nodes[nodeId].isLeaf = false;
+    m_nodes[nodeId].isLeaf = false;//make it then update it????????
     int depth = m_nodes[nodeId].depth;
     int oldDataId = m_nodes[nodeId].id;
-    m_nodes[nodeId].id = m_nodes.size();
+    ID childId = m_nodes.size();
+    m_nodes[nodeId].id = childId;//m_nodes.size();
+    ID northId = m_nodes[nodeId].neighbours[0];
+    ID eastId  = m_nodes[nodeId].neighbours[1];
+    ID southId = m_nodes[nodeId].neighbours[2];
+    ID westId  = m_nodes[nodeId].neighbours[3];
 
-    m_nodes.emplace_back(oldDataId,   m_nodes[nodeId].dirVec,                       m_nodes[nodeId].depth+1, true);
-    m_nodes.emplace_back(m_numLeaves, m_nodes[nodeId].dirVec | 1 << (28 - 2*depth), m_nodes[nodeId].depth+1, true);
+    //update neighbour at neighbour id's children with this children if is children
+    //what if children are parents too???
+    //should I use dirVec???
+    
+
+    auto updateNeighbour = [this](ID neighbourId, ID thisId, QUADRANT neighbourQuadrant, DIR neighbourSide) -> ID
+    {
+        if(neighbourId == INVALID_ID)
+            return INVALID_ID;
+        if(m_nodes[neighbourId].isLeaf)
+            return neighbourId;//no need to update as already goes to parent
+        //update ne child's right neighbour is this guy... and all its right children TOO
+        updateNeighbours(m_nodes[neighbourId].id+neighbourQuadrant, thisId, neighbourSide);
+//        m_nodes[m_nodes[neighbourId].id+neighbourQuadrant].neighbours[neighbourSide] = thisId;
+        return m_nodes[neighbourId].id+neighbourQuadrant;
+    };
+    
+    //SW
+    m_nodes.emplace_back(oldDataId,   m_nodes[nodeId].dirVec,                       m_nodes[nodeId].depth+1, true,
+                         childId + QUADRANT::NW,//N
+                         childId + QUADRANT::SE,//E
+                         INVALID_ID,//updateNeighbour(southId, childId+0, QUADRANT::NW, DIR::NORTH),//S
+                         INVALID_ID);//updateNeighbour(westId,  childId+0, QUADRANT::SE, DIR::EAST));//W
+    //SE
+    m_nodes.emplace_back(m_numLeaves, m_nodes[nodeId].dirVec | 1 << (28 - 2*depth), m_nodes[nodeId].depth+1, true,
+                         childId + QUADRANT::NE,//N
+                         INVALID_ID,//updateNeighbour(eastId,  childId+1, QUADRANT::SW, DIR::WEST),//E
+                         INVALID_ID,//updateNeighbour(southId, childId+1, QUADRANT::NE, DIR::NORTH),//S
+                         childId + QUADRANT::SW);//W
     ++m_numLeaves;
-    m_nodes.emplace_back(m_numLeaves, m_nodes[nodeId].dirVec | 2 << (28 - 2*depth), m_nodes[nodeId].depth+1, true);
+    //NW
+    m_nodes.emplace_back(m_numLeaves, m_nodes[nodeId].dirVec | 2 << (28 - 2*depth), m_nodes[nodeId].depth+1, true,
+                         INVALID_ID,//updateNeighbour(northId, childId+2, QUADRANT::SW, DIR::SOUTH),//N
+                         childId + QUADRANT::NE,//E
+                         childId + QUADRANT::SW,//S
+                         INVALID_ID);//updateNeighbour(westId,  childId+2, QUADRANT::NE, DIR::EAST));//W
     ++m_numLeaves;
-    m_nodes.emplace_back(m_numLeaves, m_nodes[nodeId].dirVec | 3 << (28 - 2*depth), m_nodes[nodeId].depth+1, true);
+    //NE
+    m_nodes.emplace_back(m_numLeaves, m_nodes[nodeId].dirVec | 3 << (28 - 2*depth), m_nodes[nodeId].depth+1, true,
+                         INVALID_ID,//updateNeighbour(northId, childId+3, QUADRANT::SE, DIR::SOUTH),//N
+                         INVALID_ID,//updateNeighbour(eastId,  childId+3, QUADRANT::NW, DIR::WEST),//E
+                         childId + QUADRANT::SE,//S
+                         childId + QUADRANT::NW);//W
     ++m_numLeaves;
+
+//can't call till the children are made if want neighbour wrapping to work as updateNeighbour updates the children too...
+    m_nodes[childId + QUADRANT::SW].neighbours[DIR::SOUTH] = updateNeighbour(southId, childId+0, QUADRANT::NW, DIR::NORTH);//S
+    m_nodes[childId + QUADRANT::SW].neighbours[DIR::WEST]  = updateNeighbour(westId,  childId+0, QUADRANT::SE, DIR::EAST);//W
+    m_nodes[childId + QUADRANT::SE].neighbours[DIR::EAST]  = updateNeighbour(eastId,  childId+1, QUADRANT::SW, DIR::WEST);//E
+    m_nodes[childId + QUADRANT::SE].neighbours[DIR::SOUTH] = updateNeighbour(southId, childId+1, QUADRANT::NE, DIR::NORTH);//S
+    m_nodes[childId + QUADRANT::NW].neighbours[DIR::NORTH] = updateNeighbour(northId, childId+2, QUADRANT::SW, DIR::SOUTH);//N
+    m_nodes[childId + QUADRANT::NW].neighbours[DIR::WEST]  = updateNeighbour(westId,  childId+2, QUADRANT::NE, DIR::EAST);//W
+    m_nodes[childId + QUADRANT::NE].neighbours[DIR::NORTH] = updateNeighbour(northId, childId+3, QUADRANT::SE, DIR::SOUTH);//N
+    m_nodes[childId + QUADRANT::NE].neighbours[DIR::EAST]  = updateNeighbour(eastId,  childId+3, QUADRANT::NW, DIR::WEST);//E
 }
 
+//FASTER???????
 //~75% of this QuadTree Algorithm's time is spent here
 void QuadTree::balanceNeighbours(NodeId nodeId, DIR skipDir)
 {
     int depth = m_nodes[nodeId].depth;
     ID dirVec = m_nodes[nodeId].dirVec;
 
-#ifdef DQT_WRAP_NEIGHBOURS
     if(depth == 0) return;
-#endif
 
     bool isEast  = dirVec & (1 << (30-2*depth));
     bool isNorth = dirVec & (2 << (30-2*depth));
 
     if(skipDir != DIR::NORTH && isNorth)
     {
-        ID northDirVec = neighbourDirVec(dirVec, depth,DIR::NORTH);
-#ifndef DQT_WRAP_NEIGHBOURS
-        if(northDirVec & OUT_OF_BOUNDS_MASK) goto NorthExit;
-#endif
-        int northNodeId = _atDir(northDirVec, depth-1);
-        if(m_nodes[northNodeId].isLeaf)
+//        ID northDirVec = neighbourDirVec(dirVec, depth,DIR::NORTH);
+//#ifndef DQT_WRAP_NEIGHBOURS
+//        if(northDirVec & OUT_OF_BOUNDS_MASK) goto NorthExit;
+//#endif
+        ID northNodeId = m_nodes[nodeId].neighbours[DIR::NORTH];//_atDir(northDirVec, depth-1);
+        if(northNodeId != INVALID_ID && m_nodes[northNodeId].isLeaf && m_nodes[northNodeId].depth < depth)
         {
             subdivide(northNodeId);
             balanceNeighbours(northNodeId,DIR::SOUTH);
         }
     }
-    NorthExit:
+//    NorthExit:
     if(skipDir != DIR::EAST && isEast)
     {
-        ID eastDirVec = neighbourDirVec(dirVec, depth, DIR::EAST);
-#ifndef DQT_WRAP_NEIGHBOURS
-        if(eastDirVec & OUT_OF_BOUNDS_MASK) goto EastExit;
-#endif
-        int eastNodeId = _atDir(eastDirVec, depth-1);
-        if(m_nodes[eastNodeId].isLeaf)
+//        ID eastDirVec = neighbourDirVec(dirVec, depth, DIR::EAST);
+//#ifndef DQT_WRAP_NEIGHBOURS
+//        if(eastDirVec & OUT_OF_BOUNDS_MASK) goto EastExit;
+//#endif
+        ID eastNodeId = m_nodes[nodeId].neighbours[DIR::EAST];//_atDir(eastDirVec, depth-1);
+        if(eastNodeId != INVALID_ID && m_nodes[eastNodeId].isLeaf && m_nodes[eastNodeId].depth < depth)
         {
             subdivide(eastNodeId);
             balanceNeighbours(eastNodeId,DIR::WEST);
         }
     }
-    EastExit:
+//    EastExit:
     if(skipDir != DIR::SOUTH && !isNorth)
     {
-        ID southDirVec = neighbourDirVec(dirVec, depth, DIR::SOUTH);
-#ifndef DQT_WRAP_NEIGHBOURS
-        if(southDirVec & OUT_OF_BOUNDS_MASK) goto SouthExit;
-#endif
-        int southNodeId = _atDir(southDirVec, depth-1);
-        if(m_nodes[southNodeId].isLeaf)
+//        ID southDirVec = neighbourDirVec(dirVec, depth, DIR::SOUTH);
+//#ifndef DQT_WRAP_NEIGHBOURS
+//        if(southDirVec & OUT_OF_BOUNDS_MASK) goto SouthExit;
+//#endif
+        ID southNodeId = m_nodes[nodeId].neighbours[DIR::SOUTH];//_atDir(southDirVec, depth-1);
+        if(southNodeId != INVALID_ID && m_nodes[southNodeId].isLeaf && m_nodes[southNodeId].depth < depth)
         {
             subdivide(southNodeId);
             balanceNeighbours(southNodeId,DIR::NORTH);
         }
     }
-    SouthExit:
+//    SouthExit:
     if(skipDir != DIR::WEST && !isEast)
     {
-        ID westDirVec = neighbourDirVec(dirVec, depth, DIR::WEST);
-#ifndef DQT_WRAP_NEIGHBOURS
-        if(westDirVec & OUT_OF_BOUNDS_MASK) return;
-#endif
-        int westNodeId = _atDir(westDirVec, depth-1);
-        if(m_nodes[westNodeId].isLeaf)
+//        ID westDirVec = neighbourDirVec(dirVec, depth, DIR::WEST);
+//#ifndef DQT_WRAP_NEIGHBOURS
+//        if(westDirVec & OUT_OF_BOUNDS_MASK) return;
+//#endif
+        ID westNodeId = m_nodes[nodeId].neighbours[DIR::WEST];//_atDir(westDirVec, depth-1);
+        if(westNodeId != INVALID_ID && m_nodes[westNodeId].isLeaf && m_nodes[westNodeId].depth < depth)
         {
             subdivide(westNodeId);
             balanceNeighbours(westNodeId,DIR::EAST);
