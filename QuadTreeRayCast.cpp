@@ -86,16 +86,18 @@ void QuadTreeTesselator::castRay(const Point &a, const Point &b, ID rightPolygon
     int loopCtr = 0;//if lastId is given use it for lastId
     PointId a_id, b_id;
 
+    const Node *pnode = &m_quadTree.at(p.x,p.y,headsRight,headsUp);
+//    const Node *pnextNode = nullptr;or asign at the end???
+
     while (true)
     {
-        const Node &node = m_quadTree.at(p.x,p.y,headsRight,headsUp);
         
-        if(node.id == INVALID_ID)
+        if(pnode->id == INVALID_ID)
         {
             endId = INVALID_ID;
             return;//the line went out of bounds of the gridMap
         }
-        Box n = m_quadTree.calcBounds(node);
+        Box n = m_quadTree.calcBounds(*pnode);
 
         float min_x = n.x;
         float max_x = n.x + n.sz;
@@ -136,11 +138,13 @@ void QuadTreeTesselator::castRay(const Point &a, const Point &b, ID rightPolygon
             {
                 exitPoint.x = max_x;
                 distX = max_x - a.x;//distX = (p.x - a.x) + x_dist_to_travel;
+                pnextNode = &m_quadTree.neighbour(*pnode, DIR::EAST);
             }
             else
             {
                 exitPoint.x = min_x;
                 distX = min_x - a.x;//distX = (p.x - a.x) - x_dist_to_travel;
+                pnextNode = &m_quadTree.neighbour(*pnode, DIR::WEST);
             }
             exitPoint.y = a.y + (dy * distX / dx);// m * distX;
         }
@@ -150,11 +154,13 @@ void QuadTreeTesselator::castRay(const Point &a, const Point &b, ID rightPolygon
             {
                 exitPoint.y = max_y;
                 distY = max_y - a.y;//(p.y - a.y) + y_dist_to_travel;
+                pnextNode = &m_quadTree.neighbour(*pnode, DIR::NORTH);
             }
             else
             {
                 exitPoint.y = min_y;
                 distY = min_y - a.y;//distY = (p.y - a.y) - y_dist_to_travel;
+                pnextNode = &m_quadTree.neighbour(*pnode, DIR::SOUTH);
             }
             exitPoint.x = a.x + (dx * distY / dy);//a.x + m_ * distY;
         }
@@ -163,27 +169,31 @@ void QuadTreeTesselator::castRay(const Point &a, const Point &b, ID rightPolygon
             if(headsRight)
             {
                 exitPoint.x = max_x;
+                pnextNode = &m_quadTree.neighbour(*pnode, DIR::EAST);
             }
             else
             {
                 exitPoint.x = min_x;
+                pnextNode = &m_quadTree.neighbour(*pnode, DIR::WEST);
             }
             if(headsUp)
             {
                 exitPoint.y = max_y;
+                pnextNode = &m_quadTree.neighbour(*pnextNode, DIR::NORTH);
             }
             else
             {
                 exitPoint.y = min_y;
+                pnextNode = &m_quadTree.neighbour(*pnextNode, DIR::SOUTH);
             }
         }
 
 //////END DDA RAY CAST STEP
 
         //Load the raycast generated points into the cellInfo struct
-        CellInfo &C = m_cellInfos[node.id];
+        CellInfo &C = m_cellInfos[pnode->id];
         if(C.lines.size() == 0)
-            m_lineNodes.push_back(&node);//add to active List for floodfill algo later
+            m_lineNodes.push_back(pnode);//add to active List for floodfill algo later
 
         //normalize the points
         Point a_normalized = p;
@@ -263,6 +273,7 @@ void QuadTreeTesselator::castRay(const Point &a, const Point &b, ID rightPolygon
         ++loopCtr;
 
         p = exitPoint;
+        pnode = pnextNode;
 
         if(isDone)
         {
