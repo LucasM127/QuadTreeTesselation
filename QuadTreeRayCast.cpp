@@ -87,7 +87,6 @@ void QuadTreeTesselator::castRay(const Point &a, const Point &b, ID rightPolygon
     PointId a_id, b_id;
 
     const Node *pnode = &m_quadTree.at(p.x,p.y,headsRight,headsUp);
-//    const Node *pnextNode = nullptr;or asign at the end???
 
     while (true)
     {
@@ -138,13 +137,11 @@ void QuadTreeTesselator::castRay(const Point &a, const Point &b, ID rightPolygon
             {
                 exitPoint.x = max_x;
                 distX = max_x - a.x;//distX = (p.x - a.x) + x_dist_to_travel;
-                pnextNode = &m_quadTree.neighbour(*pnode, DIR::EAST);
             }
             else
             {
                 exitPoint.x = min_x;
                 distX = min_x - a.x;//distX = (p.x - a.x) - x_dist_to_travel;
-                pnextNode = &m_quadTree.neighbour(*pnode, DIR::WEST);
             }
             exitPoint.y = a.y + (dy * distX / dx);// m * distX;
         }
@@ -154,13 +151,11 @@ void QuadTreeTesselator::castRay(const Point &a, const Point &b, ID rightPolygon
             {
                 exitPoint.y = max_y;
                 distY = max_y - a.y;//(p.y - a.y) + y_dist_to_travel;
-                pnextNode = &m_quadTree.neighbour(*pnode, DIR::NORTH);
             }
             else
             {
                 exitPoint.y = min_y;
                 distY = min_y - a.y;//distY = (p.y - a.y) - y_dist_to_travel;
-                pnextNode = &m_quadTree.neighbour(*pnode, DIR::SOUTH);
             }
             exitPoint.x = a.x + (dx * distY / dy);//a.x + m_ * distY;
         }
@@ -169,22 +164,19 @@ void QuadTreeTesselator::castRay(const Point &a, const Point &b, ID rightPolygon
             if(headsRight)
             {
                 exitPoint.x = max_x;
-                pnextNode = &m_quadTree.neighbour(*pnode, DIR::EAST);
             }
             else
             {
                 exitPoint.x = min_x;
-                pnextNode = &m_quadTree.neighbour(*pnode, DIR::WEST);
+
             }
             if(headsUp)
             {
                 exitPoint.y = max_y;
-                pnextNode = &m_quadTree.neighbour(*pnextNode, DIR::NORTH);
             }
             else
             {
                 exitPoint.y = min_y;
-                pnextNode = &m_quadTree.neighbour(*pnextNode, DIR::SOUTH);
             }
         }
 
@@ -273,7 +265,6 @@ void QuadTreeTesselator::castRay(const Point &a, const Point &b, ID rightPolygon
         ++loopCtr;
 
         p = exitPoint;
-        pnode = pnextNode;
 
         if(isDone)
         {
@@ -282,6 +273,40 @@ void QuadTreeTesselator::castRay(const Point &a, const Point &b, ID rightPolygon
         }
 
         p = exitPoint;
+
+        //advance pnode use b_normalized ...
+        //member of QuadTree????
+        //m_quadTree... advanceRay?
+        //m_quadTree.neighbour(*pnode, normalizedExitPoint, headsRight, headsUp);//or BoolDirVec
+        //advanceNode(pnode, const &b_normalized, const headsRight, const headsUp);
+
+//pnode to appropiate 'cell'
+    if(b_normalized.x == 1.f)
+        pnode = &m_quadTree.neighbour(*pnode, DIR::EAST);
+    else if(b_normalized.x == 0.f)
+        pnode = &m_quadTree.neighbour(*pnode, DIR::WEST);
+    if(b_normalized.y == 1.f)
+        pnode = &m_quadTree.neighbour(*pnode, DIR::NORTH);
+    else if(b_normalized.y == 0.f)
+        pnode = &m_quadTree.neighbour(*pnode, DIR::SOUTH);
+
+    if(pnode->isLeaf)
+        continue;
+
+    //a parent below.  Balanced.  Find out the quadrant
+    //CASES
+    //x == 0, y == 0 SW Corner.  NE QUADRANT
+    //x == 0, y < 0.5 W Side     SE QUADRANT
+    //x == 0, y == 0.5f headsDown SE QUADRANT//indeterminant
+    //x == 0, y == 0.5f headsUp.  NE QUADRANT
+    //x == 0, y < 1.f             NE QUADRANT
+    //x == 0, y == 1 NW Corner   SE QUADRANT //all East 3 N 3 S
+    //REPEAT for x == 1 y == 0 y == 1 ... except 4 corner cases distinct.
+    //cache it???
+    //0 1 if is west or east quadrant
+    //0 2 if is south or north quadrant add at end...
+
+
     }
 }
 
