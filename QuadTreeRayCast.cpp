@@ -60,7 +60,8 @@ void QuadTreeTesselator::genLinePoints(QuadTreeTesselator::LineData &LD)
     return;
 }
 
-//Exit condition is SCARY but it hasn't failed me yet.  Fix one day.
+//option: quit when distX == dx or distY == dy (same as we have... but with epsilon for if did with floaty point coords)
+//with integer coords this seems to work fine as is no need to overly complicate things
 void QuadTreeTesselator::castRay(const Point &a, const Point &b, ID rightPolygonId, ID leftPolygonId, PointId &startId, PointId &endId)
 {
     //Has to start and end on a cell wall
