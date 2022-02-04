@@ -60,6 +60,9 @@ void QuadTreeTesselator::genLinePoints(QuadTreeTesselator::LineData &LD)
     return;
 }
 
+//normalized exitPoint// modifies pNode
+static const Node * getRayNextNode(const Point &exitPoint, const QuadTree &quadTree, const bool headsRight, const bool headsUp, const Node *pNode);
+
 //Exit condition is SCARY but it hasn't failed me yet.  Fix one day.
 void QuadTreeTesselator::castRay(const Point &a, const Point &b, ID rightPolygonId, ID leftPolygonId, PointId &startId, PointId &endId)
 {
@@ -262,52 +265,132 @@ void QuadTreeTesselator::castRay(const Point &a, const Point &b, ID rightPolygon
             
         C.linePointIds.push_back(b_id);
 
-        ++loopCtr;
-
-        p = exitPoint;
-
         if(isDone)
         {
             endId = b_id;
             return;
         }
 
+        pnode = getRayNextNode(b_normalized, m_quadTree, headsRight, headsUp, pnode);
+        assert(pnode->isLeaf);
         p = exitPoint;
-
-        //advance pnode use b_normalized ...
-        //member of QuadTree????
-        //m_quadTree... advanceRay?
-        //m_quadTree.neighbour(*pnode, normalizedExitPoint, headsRight, headsUp);//or BoolDirVec
-        //advanceNode(pnode, const &b_normalized, const headsRight, const headsUp);
-
-//pnode to appropiate 'cell'
-    if(b_normalized.x == 1.f)
-        pnode = &m_quadTree.neighbour(*pnode, DIR::EAST);
-    else if(b_normalized.x == 0.f)
-        pnode = &m_quadTree.neighbour(*pnode, DIR::WEST);
-    if(b_normalized.y == 1.f)
-        pnode = &m_quadTree.neighbour(*pnode, DIR::NORTH);
-    else if(b_normalized.y == 0.f)
-        pnode = &m_quadTree.neighbour(*pnode, DIR::SOUTH);
-
-    if(pnode->isLeaf)
-        continue;
-
-    //a parent below.  Balanced.  Find out the quadrant
-    //CASES
-    //x == 0, y == 0 SW Corner.  NE QUADRANT
-    //x == 0, y < 0.5 W Side     SE QUADRANT
-    //x == 0, y == 0.5f headsDown SE QUADRANT//indeterminant
-    //x == 0, y == 0.5f headsUp.  NE QUADRANT
-    //x == 0, y < 1.f             NE QUADRANT
-    //x == 0, y == 1 NW Corner   SE QUADRANT //all East 3 N 3 S
-    //REPEAT for x == 1 y == 0 y == 1 ... except 4 corner cases distinct.
-    //cache it???
-    //0 1 if is west or east quadrant
-    //0 2 if is south or north quadrant add at end...
-
-
+        ++loopCtr;
     }
+}
+//NEED TO UNIT TEST IT>>>>>>
+//f of quadtree??? this ray cast stuff shouldn't be in the tesselator... free function?
+static const Node * getRayNextNode(const Point &exitPoint, const QuadTree &quadTree, const bool headsRight, const bool headsUp, const Node * pnode)
+{
+    //which wall is ray hitting?
+    //nesw wall 1 2 4 8
+    //where in the wall is ray hitting?
+    //at 0 between 0-0.5 at 0.5 between 0.5-1 at 1
+    //first two cases dealt with in last question so only 3 cases to check
+    //worst case 9 ifs best case 3 ifs
+    bool isEast = exitPoint.x == 1.f;
+    bool isWest = exitPoint.x == 0.f;
+    bool isNorth = exitPoint.y == 1.f;
+    bool isSouth = exitPoint.y == 0.f;
+//a corner corner is unbalanced...
+    if(isEast)
+        pnode = &quadTree.neighbour(*pnode, DIR::EAST);
+    else if(isWest)
+        pnode = &quadTree.neighbour(*pnode, DIR::WEST);
+    //if(pnode->id == INVALID_ID)
+    //    return pnode;
+    if(isNorth)
+        pnode = &quadTree.neighbour(*pnode, DIR::NORTH);
+    else if(isSouth)
+        pnode = &quadTree.neighbour(*pnode, DIR::SOUTH);
+
+    if(pnode->id == INVALID_ID || pnode->isLeaf)
+        return pnode;
+//returning a leaf and go into infinite loop??? SW
+    if(isNorth)
+    {
+        if(isWest)
+        {
+            pnode = &quadTree.se(*pnode);
+            if(!pnode->isLeaf)
+                pnode = &quadTree.se(*pnode);
+            return pnode;
+        }
+        else if(isEast)
+        {
+            pnode = &quadTree.sw(*pnode);
+            if(!pnode->isLeaf)
+                pnode = &quadTree.sw(*pnode);
+            return pnode;
+        }
+        else if(exitPoint.x < 0.5f)
+            return &quadTree.sw(*pnode);
+        else if(exitPoint.x > 0.5f)
+            return &quadTree.se(*pnode);
+        else
+        {
+            if(headsRight)
+                return &quadTree.se(*pnode);
+            else
+                return &quadTree.sw(*pnode);
+        }
+    }
+    if(isSouth)
+    {
+        if(isWest)
+        {
+            pnode = &quadTree.ne(*pnode);
+            if(!pnode->isLeaf)
+                pnode = &quadTree.ne(*pnode);
+            return pnode;
+        }
+        else if(isEast)
+        {
+            pnode = &quadTree.nw(*pnode);
+            if(!pnode->isLeaf)
+                pnode = &quadTree.nw(*pnode);
+            return pnode;
+        }
+        else if(exitPoint.x < 0.5f)
+            return &quadTree.nw(*pnode);
+        else if(exitPoint.x > 0.5f)
+            return &quadTree.ne(*pnode);
+        else
+        {
+            if(headsRight)
+                return &quadTree.ne(*pnode);
+            else
+                return &quadTree.nw(*pnode);
+        }
+    }
+    if(isEast)
+    {
+        if(exitPoint.y < 0.5f)
+            return &quadTree.sw(*pnode);
+        else if(exitPoint.y > 0.5f)
+            return &quadTree.nw(*pnode);
+        else
+        {
+            if(headsUp)
+                return &quadTree.nw(*pnode);
+            else
+                return &quadTree.sw(*pnode);
+        }
+    }
+    if(isWest)
+    {
+        if(exitPoint.y < 0.5f)
+            return &quadTree.se(*pnode);
+        else if(exitPoint.y > 0.5f)
+            return &quadTree.ne(*pnode);
+        else
+        {
+            if(headsUp)
+                return &quadTree.ne(*pnode);
+            else
+                return &quadTree.se(*pnode);
+        }
+    }
+    throw;
 }
 
 } //namespace TESS
