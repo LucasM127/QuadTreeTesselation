@@ -264,6 +264,9 @@ void QuadTreeTesselator::castRay(const Point &a, const Point &b, ID rightPolygon
         }
             
         C.linePointIds.push_back(b_id);
+//used for line points...
+        assert(a_normalized.x == 1.f || a_normalized.y == 1.f || a_normalized.x == 0.f || a_normalized.y == 0.f);
+        assert(b_normalized.x == 1.f || b_normalized.y == 1.f || b_normalized.x == 0.f || b_normalized.y == 0.f);
 
         if(isDone)
         {
@@ -277,73 +280,100 @@ void QuadTreeTesselator::castRay(const Point &a, const Point &b, ID rightPolygon
         ++loopCtr;
     }
 }
-//NEED TO UNIT TEST IT>>>>>>
-//f of quadtree??? this ray cast stuff shouldn't be in the tesselator... free function?
+
+//This actually works I can't believe it
+//using the cached neighbour system instead of having to go through the depths way
+//ASSUMING the tree is balanced now test and see if is even worth it...
 static const Node * getRayNextNode(const Point &exitPoint, const QuadTree &quadTree, const bool headsRight, const bool headsUp, const Node * pnode)
 {
-    //which wall is ray hitting?
-    //nesw wall 1 2 4 8
-    //where in the wall is ray hitting?
-    //at 0 between 0-0.5 at 0.5 between 0.5-1 at 1
-    //first two cases dealt with in last question so only 3 cases to check
-    //worst case 9 ifs best case 3 ifs
     bool isEast = exitPoint.x == 1.f;
     bool isWest = exitPoint.x == 0.f;
     bool isNorth = exitPoint.y == 1.f;
     bool isSouth = exitPoint.y == 0.f;
-//a corner corner is unbalanced...
-    if(isEast)
+    
+    if(isEast && isNorth)
+    {
+        if(quadTree.neighbour(*pnode, DIR::EAST).depth < pnode->depth)
+        {
+            pnode = &quadTree.neighbour(*pnode, DIR::NORTH);
+            pnode = &quadTree.neighbour(*pnode, DIR::EAST);
+        }
+        else
+        {
+            pnode = &quadTree.neighbour(*pnode, DIR::EAST);
+            pnode = &quadTree.neighbour(*pnode, DIR::NORTH);
+        }
+    }
+    else if(isEast && isSouth && !headsUp)
+    {
+        if(quadTree.neighbour(*pnode, DIR::EAST).depth < pnode->depth)
+        {
+            pnode = &quadTree.neighbour(*pnode, DIR::SOUTH);
+            pnode = &quadTree.neighbour(*pnode, DIR::EAST);
+        }
+        else
+        {
+            pnode = &quadTree.neighbour(*pnode, DIR::EAST);
+            pnode = &quadTree.neighbour(*pnode, DIR::SOUTH);
+        }
+    }
+    else if(isWest && !headsRight && isNorth)
+    {
+        if(quadTree.neighbour(*pnode, DIR::WEST).depth < pnode->depth)
+        {
+            pnode = &quadTree.neighbour(*pnode, DIR::NORTH);
+            pnode = &quadTree.neighbour(*pnode, DIR::WEST);
+        }
+        else
+        {
+            pnode = &quadTree.neighbour(*pnode, DIR::WEST);
+            pnode = &quadTree.neighbour(*pnode, DIR::NORTH);
+        }
+    }
+    else if(isWest &&!headsRight && isSouth && !headsUp)
+    {
+        if(quadTree.neighbour(*pnode, DIR::WEST).depth < pnode->depth)
+        {
+            pnode = &quadTree.neighbour(*pnode, DIR::SOUTH);
+            pnode = &quadTree.neighbour(*pnode, DIR::WEST);
+        }
+        else
+        {
+            pnode = &quadTree.neighbour(*pnode, DIR::WEST);
+            pnode = &quadTree.neighbour(*pnode, DIR::SOUTH);
+        }
+    }
+    else if(isEast)
         pnode = &quadTree.neighbour(*pnode, DIR::EAST);
-    else if(isWest)
+    else if(isWest && !headsRight)
         pnode = &quadTree.neighbour(*pnode, DIR::WEST);
-    //if(pnode->id == INVALID_ID)
-    //    return pnode;
-    if(isNorth)
+    else if(isNorth)
         pnode = &quadTree.neighbour(*pnode, DIR::NORTH);
-    else if(isSouth)
+    else if(isSouth && !headsUp)
         pnode = &quadTree.neighbour(*pnode, DIR::SOUTH);
 
     if(pnode->id == INVALID_ID || pnode->isLeaf)
         return pnode;
-//returning a leaf and go into infinite loop??? SW
-    if(isNorth)
-    {
-        if(isWest)
-        {
-            pnode = &quadTree.se(*pnode);
-            if(!pnode->isLeaf)
-                pnode = &quadTree.se(*pnode);
-            return pnode;
-        }
-        else if(isEast)
-        {
-            pnode = &quadTree.sw(*pnode);
-            if(!pnode->isLeaf)
-                pnode = &quadTree.sw(*pnode);
-            return pnode;
-        }
-        else if(exitPoint.x < 0.5f)
-            return &quadTree.sw(*pnode);
-        else if(exitPoint.x > 0.5f)
-            return &quadTree.se(*pnode);
-        else
-        {
-            if(headsRight)
-                return &quadTree.se(*pnode);
-            else
-                return &quadTree.sw(*pnode);
-        }
-    }
+
     if(isSouth)
     {
         if(isWest)
         {
-            pnode = &quadTree.ne(*pnode);
-            if(!pnode->isLeaf)
+            if(!headsRight && !headsUp)
+            {
                 pnode = &quadTree.ne(*pnode);
+                if(!pnode->isLeaf)
+                    pnode = &quadTree.ne(*pnode);
+            }
+            else if(!headsRight)
+                pnode = &quadTree.se(*pnode);
+            else if(!headsUp)//!headsUp only logical case (assert?)
+                pnode = &quadTree.nw(*pnode);
+            else
+                throw;//see...
             return pnode;
         }
-        else if(isEast)
+        else if(isEast && !headsUp)
         {
             pnode = &quadTree.nw(*pnode);
             if(!pnode->isLeaf)
@@ -362,6 +392,35 @@ static const Node * getRayNextNode(const Point &exitPoint, const QuadTree &quadT
                 return &quadTree.nw(*pnode);
         }
     }
+    if(isNorth)
+    {
+        if(isWest && !headsRight)
+        {//otherwise goes to sw of north neighbour
+            pnode = &quadTree.se(*pnode);
+            if(!pnode->isLeaf)
+                pnode = &quadTree.se(*pnode);
+            return pnode;
+        }
+        else if(isEast)
+        {//only one way else wouldn't exist in the cell
+            pnode = &quadTree.sw(*pnode);
+            if(!pnode->isLeaf)
+                pnode = &quadTree.sw(*pnode);
+            return pnode;
+        }
+        else if(exitPoint.x < 0.5f)
+            return &quadTree.sw(*pnode);
+        else if(exitPoint.x > 0.5f)
+            return &quadTree.se(*pnode);
+        else
+        {
+            if(headsRight)
+                return &quadTree.se(*pnode);
+            else
+                return &quadTree.sw(*pnode);
+        }
+    }
+    //not North or South now
     if(isEast)
     {
         if(exitPoint.y < 0.5f)
