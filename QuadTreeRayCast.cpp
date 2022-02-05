@@ -58,11 +58,8 @@ void QuadTreeTesselator::genLinePoints(QuadTreeTesselator::LineData &LD)
     return;
 }
 
-<<<<<<< HEAD
-=======
 static const Node * getRayNextNode(const Point &exitPoint, const QuadTree &quadTree, const bool headsRight, const bool headsUp, const Node * pnode);
 
->>>>>>> test
 //option: quit when distX == dx or distY == dy (same as we have... but with epsilon for if did with floaty point coords)
 //with integer coords this seems to work fine as is no need to overly complicate things
 void QuadTreeTesselator::castRay(const Point &a, const Point &b, ID rightPolygonId, ID leftPolygonId, PointId &startId, PointId &endId)
