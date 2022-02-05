@@ -6,7 +6,6 @@
 #include <random>
 #include "SFMLCamera.hpp"
 
-
 #include <chrono>
 class Timer
 {
@@ -48,16 +47,31 @@ void drawRegion(const TESS::QuadTreeTesselator &QTT, const unsigned int id, cons
 
 //living on the edge
 void debugDraw(const TESS::QuadTree &QT, const std::vector<TESS::CellInfo> &cellInfos, const std::vector<const TESS::Node*> &lineNodes, std::vector<sf::Vertex> &tris)
-{
-    sf::Color goodColor = sf::Color(0,255,0,128);
-    sf::Color badColor = sf::Color(255,0,0,128);
+{//0 or 1
+    sf::Color color;
+
+    auto getColor = [](unsigned int id)->sf::Color
+    {
+        switch (id)
+        {
+        case -1:
+            return sf::Color(255,0,0,128);
+        case 0:
+            return sf::Color(0,255,0,128);
+        case 1:
+            return sf::Color(0,0,255,128);
+        default:
+            return sf::Color::Black;
+        }
+    };
+
     //the dependencies are a bit wonky too
     //if neighbour draw green, else draw red line
     for(auto pnode : lineNodes)
     {
         auto C = cellInfos[pnode->id];
         TESS::Box n = QT.calcBounds(*pnode);
-        float o = 0.25f;//n.sz / 4.f;
+        float o = n.sz / 16.f;
         Point sw_in(n.x+o,n.y+o);
         Point se_in(n.x+n.sz-o,n.y+o);
         Point nw_in(n.x+o,n.y+n.sz-o);
@@ -67,108 +81,63 @@ void debugDraw(const TESS::QuadTree &QT, const std::vector<TESS::CellInfo> &cell
         Point nw(n.x,n.y+n.sz);
         Point ne(n.x+n.sz,n.y+n.sz);
 
-        if(C.neighbourIds[TESS::DIR::NORTH] != TESS::INVALID_ID)
+        color = getColor(C.neighbourIds[TESS::DIR::NORTH]);
         {
-            tris.emplace_back(nw,goodColor);
-            tris.emplace_back(ne,goodColor);
-            tris.emplace_back(nw_in,goodColor);
+            tris.emplace_back(nw,color);
+            tris.emplace_back(ne,color);
+            tris.emplace_back(nw_in,color);
 
-            tris.emplace_back(nw_in,goodColor);
-            tris.emplace_back(ne,goodColor);
-            tris.emplace_back(ne_in,goodColor);
+            tris.emplace_back(nw_in,color);
+            tris.emplace_back(ne,color);
+            tris.emplace_back(ne_in,color);
         }
-        else
+        color = getColor(C.neighbourIds[TESS::DIR::WEST]);
         {
-            tris.emplace_back(nw,badColor);
-            tris.emplace_back(ne,badColor);
-            tris.emplace_back(nw_in,badColor);
+            tris.emplace_back(nw,color);
+            tris.emplace_back(sw,color);
+            tris.emplace_back(nw_in,color);
 
-            tris.emplace_back(nw_in,badColor);
-            tris.emplace_back(ne,badColor);
-            tris.emplace_back(ne_in,badColor);
+            tris.emplace_back(nw_in,color);
+            tris.emplace_back(sw,color);
+            tris.emplace_back(sw_in,color);
         }
-
-        if(C.neighbourIds[TESS::DIR::WEST] != TESS::INVALID_ID)
+        color = getColor(C.neighbourIds[TESS::DIR::SOUTH]);
         {
-            tris.emplace_back(nw,goodColor);
-            tris.emplace_back(sw,goodColor);
-            tris.emplace_back(nw_in,goodColor);
+            tris.emplace_back(se,color);
+            tris.emplace_back(sw,color);
+            tris.emplace_back(se_in,color);
 
-            tris.emplace_back(nw_in,goodColor);
-            tris.emplace_back(sw,goodColor);
-            tris.emplace_back(sw_in,goodColor);
+            tris.emplace_back(se_in,color);
+            tris.emplace_back(sw,color);
+            tris.emplace_back(sw_in,color);
         }
-        else
+        color = getColor(C.neighbourIds[TESS::DIR::EAST]);
         {
-            tris.emplace_back(nw,badColor);
-            tris.emplace_back(sw,badColor);
-            tris.emplace_back(nw_in,badColor);
+            tris.emplace_back(se,color);
+            tris.emplace_back(ne,color);
+            tris.emplace_back(se_in,color);
 
-            tris.emplace_back(nw_in,badColor);
-            tris.emplace_back(sw,badColor);
-            tris.emplace_back(sw_in,badColor);
-        }
-
-        if(C.neighbourIds[TESS::DIR::SOUTH] != TESS::INVALID_ID)
-        {
-            tris.emplace_back(se,goodColor);
-            tris.emplace_back(sw,goodColor);
-            tris.emplace_back(se_in,goodColor);
-
-            tris.emplace_back(se_in,goodColor);
-            tris.emplace_back(sw,goodColor);
-            tris.emplace_back(sw_in,goodColor);
-        }
-        else
-        {
-            tris.emplace_back(se,badColor);
-            tris.emplace_back(sw,badColor);
-            tris.emplace_back(se_in,badColor);
-
-            tris.emplace_back(se_in,badColor);
-            tris.emplace_back(sw,badColor);
-            tris.emplace_back(sw_in,badColor);
-        }
-
-        if(C.neighbourIds[TESS::DIR::EAST] != TESS::INVALID_ID)
-        {
-            tris.emplace_back(se,goodColor);
-            tris.emplace_back(ne,goodColor);
-            tris.emplace_back(se_in,goodColor);
-
-            tris.emplace_back(se_in,goodColor);
-            tris.emplace_back(ne,goodColor);
-            tris.emplace_back(ne_in,goodColor);
-        }
-        else
-        {
-            tris.emplace_back(se,badColor);
-            tris.emplace_back(ne,badColor);
-            tris.emplace_back(se_in,badColor);
-
-            tris.emplace_back(se_in,badColor);
-            tris.emplace_back(ne,badColor);
-            tris.emplace_back(ne_in,badColor);
+            tris.emplace_back(se_in,color);
+            tris.emplace_back(ne,color);
+            tris.emplace_back(ne_in,color);
         }
     }
 }
 
 int main()
-{//should i put in my camera system again ? YEAH I NEEDS IT
+{
     std::random_device rd;
     int seed = rd();
-    //seed = 1638318210;//super faily seed for testing purposes
-    //seed = -192464786;
-//    std::cout<<seed<<std::endl;
+    std::cout<<seed<<std::endl;
     int sz = 4096;//64;
 
     std::mt19937 random_engine(seed);
     std::uniform_real_distribution<float> randFloat(0.f,1.f);
 
-    std::vector<Point> pointyPolygon;
+    std::vector<Point> pointyPolygon;//try a rectangle???
     for(float i = 0.f; i < 360.f; i += 1.f)//0.25f)//1.f)// 5.f)
     {
-        float r = randFloat(random_engine) * (3*sz/8) + (sz/8);
+        float r = randFloat(random_engine) * (3*sz/8) + (sz/8);// (sz/32.f) + (3*sz/8);//< + (sz/8);
         float theta = i * M_PI / 180.f;
         float x = r * cosf(theta);
         float y = r * sinf(theta);
@@ -190,9 +159,10 @@ int main()
     TESS::QuadTreeTesselator QTT(sz,sz,{0,0},1);
     
     QTT.addLine(pointyPolygon,1);
-    
+{
+    Timer T("PointyMake");    
     QTT.triangulate();
-
+}
     std::cout<<QTT.getPoints().size()<<" points generated\n";
     std::cout<<QTT.getCellTriIds(0).size()<<" & "<<QTT.getCellTriIds(1).size()<<" cells generated\n";
     std::cout<<QTT.getTriangles(0).size()<<" & "<<QTT.getTriangles(1).size()<<" triangle points generated\n";
