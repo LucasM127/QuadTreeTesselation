@@ -6,7 +6,6 @@
 #include <random>
 #include "SFMLCamera.hpp"
 
-
 #include <chrono>
 class Timer
 {
@@ -126,14 +125,9 @@ void debugDraw(const TESS::QuadTree &QT, const std::vector<TESS::CellInfo> &cell
 }
 
 int main()
-{//should i put in my camera system again ? YEAH I NEEDS IT
+{
     std::random_device rd;
     int seed = rd();
-    //seed = 1638318210;//super faily seed for testing purposes
-    //seed = -192464786;
-    //seed = 2005654623;//border
-    //seed = 1466811458;//normalized fail
-    //seed = 273982980;//double free???
     std::cout<<seed<<std::endl;
     int sz = 4096;//64;
 
@@ -143,7 +137,7 @@ int main()
     std::vector<Point> pointyPolygon;//try a rectangle???
     for(float i = 0.f; i < 360.f; i += 1.f)//0.25f)//1.f)// 5.f)
     {
-        float r = randFloat(random_engine) * (sz/32.f) + (3*sz/8);//< + (sz/8);
+        float r = randFloat(random_engine) * (3*sz/8) + (sz/8);// (sz/32.f) + (3*sz/8);//< + (sz/8);
         float theta = i * M_PI / 180.f;
         float x = r * cosf(theta);
         float y = r * sinf(theta);
@@ -165,9 +159,10 @@ int main()
     TESS::QuadTreeTesselator QTT(sz,sz,{0,0},1);
     
     QTT.addLine(pointyPolygon,1);
-    
+{
+    Timer T("PointyMake");    
     QTT.triangulate();
-
+}
     std::cout<<QTT.getPoints().size()<<" points generated\n";
     std::cout<<QTT.getCellTriIds(0).size()<<" & "<<QTT.getCellTriIds(1).size()<<" cells generated\n";
     std::cout<<QTT.getTriangles(0).size()<<" & "<<QTT.getTriangles(1).size()<<" triangle points generated\n";

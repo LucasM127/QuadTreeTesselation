@@ -23,8 +23,6 @@ void QuadTreeTesselator::addLine(const std::vector<Point> &rline, ID rightId, ID
     for(auto &p : rline)
         line.emplace_back(snap(p,m_offset,m_stepSz));
     m_lineDatas.push_back({std::move(line),rightId,leftId});
-    //m_regions.insert(rightId);
-    //m_regions.insert(leftId);
 }
 
 //assume line is 'IN Bounds' Clipping is out of this algorithms scope.
@@ -60,10 +58,10 @@ void QuadTreeTesselator::genLinePoints(QuadTreeTesselator::LineData &LD)
     return;
 }
 
-//normalized exitPoint// modifies pNode
-static const Node * getRayNextNode(const Point &exitPoint, const QuadTree &quadTree, const bool headsRight, const bool headsUp, const Node *pNode);
+static const Node * getRayNextNode(const Point &exitPoint, const QuadTree &quadTree, const bool headsRight, const bool headsUp, const Node * pnode);
 
-//Exit condition is SCARY but it hasn't failed me yet.  Fix one day.
+//option: quit when distX == dx or distY == dy (same as we have... but with epsilon for if did with floaty point coords)
+//with integer coords this seems to work fine as is no need to overly complicate things
 void QuadTreeTesselator::castRay(const Point &a, const Point &b, ID rightPolygonId, ID leftPolygonId, PointId &startId, PointId &endId)
 {
     //Has to start and end on a cell wall
@@ -88,12 +86,10 @@ void QuadTreeTesselator::castRay(const Point &a, const Point &b, ID rightPolygon
 
     int loopCtr = 0;//if lastId is given use it for lastId
     PointId a_id, b_id;
-
     const Node *pnode = &m_quadTree.at(p.x,p.y,headsRight,headsUp);
 
     while (true)
-    {
-        
+    {   
         if(pnode->id == INVALID_ID)
         {
             endId = INVALID_ID;
@@ -171,7 +167,6 @@ void QuadTreeTesselator::castRay(const Point &a, const Point &b, ID rightPolygon
             else
             {
                 exitPoint.x = min_x;
-
             }
             if(headsUp)
             {
@@ -264,9 +259,6 @@ void QuadTreeTesselator::castRay(const Point &a, const Point &b, ID rightPolygon
         }
             
         C.linePointIds.push_back(b_id);
-//used for line points...
-        assert(a_normalized.x == 1.f || a_normalized.y == 1.f || a_normalized.x == 0.f || a_normalized.y == 0.f);
-        assert(b_normalized.x == 1.f || b_normalized.y == 1.f || b_normalized.x == 0.f || b_normalized.y == 0.f);
 
         if(isDone)
         {
@@ -281,175 +273,203 @@ void QuadTreeTesselator::castRay(const Point &a, const Point &b, ID rightPolygon
     }
 }
 
-//This actually works I can't believe it
-//using the cached neighbour system instead of having to go through the depths way
-//ASSUMING the tree is balanced now test and see if is even worth it...
+//Balanced tree assumed
 static const Node * getRayNextNode(const Point &exitPoint, const QuadTree &quadTree, const bool headsRight, const bool headsUp, const Node * pnode)
 {
-    bool isEast = exitPoint.x == 1.f;
-    bool isWest = exitPoint.x == 0.f;
-    bool isNorth = exitPoint.y == 1.f;
-    bool isSouth = exitPoint.y == 0.f;
-    
-    if(isEast && isNorth)
+    const int WEST = 1;
+    const int EAST = 2;
+    const int SOUTH = 4;
+    const int NORTH = 8;
+
+    int q = 0;//quadrant ray going into
+    if(exitPoint.x == 0.f && !headsRight)
+        q |= WEST;
+    else if(exitPoint.x == 1.f)
+        q |= EAST;
+    if(exitPoint.y == 0.f && !headsUp)
+        q |= SOUTH;
+    else if(exitPoint.y == 1.f)
+        q |= NORTH;
+
+    //get appropiate neighbour node
+    switch (q)
     {
-        if(quadTree.neighbour(*pnode, DIR::EAST).depth < pnode->depth)
-        {
-            pnode = &quadTree.neighbour(*pnode, DIR::NORTH);
-            pnode = &quadTree.neighbour(*pnode, DIR::EAST);
-        }
-        else
-        {
-            pnode = &quadTree.neighbour(*pnode, DIR::EAST);
-            pnode = &quadTree.neighbour(*pnode, DIR::NORTH);
-        }
-    }
-    else if(isEast && isSouth && !headsUp)
-    {
-        if(quadTree.neighbour(*pnode, DIR::EAST).depth < pnode->depth)
-        {
-            pnode = &quadTree.neighbour(*pnode, DIR::SOUTH);
-            pnode = &quadTree.neighbour(*pnode, DIR::EAST);
-        }
-        else
-        {
-            pnode = &quadTree.neighbour(*pnode, DIR::EAST);
-            pnode = &quadTree.neighbour(*pnode, DIR::SOUTH);
-        }
-    }
-    else if(isWest && !headsRight && isNorth)
-    {
-        if(quadTree.neighbour(*pnode, DIR::WEST).depth < pnode->depth)
-        {
-            pnode = &quadTree.neighbour(*pnode, DIR::NORTH);
-            pnode = &quadTree.neighbour(*pnode, DIR::WEST);
-        }
-        else
-        {
-            pnode = &quadTree.neighbour(*pnode, DIR::WEST);
-            pnode = &quadTree.neighbour(*pnode, DIR::NORTH);
-        }
-    }
-    else if(isWest &&!headsRight && isSouth && !headsUp)
-    {
-        if(quadTree.neighbour(*pnode, DIR::WEST).depth < pnode->depth)
-        {
-            pnode = &quadTree.neighbour(*pnode, DIR::SOUTH);
-            pnode = &quadTree.neighbour(*pnode, DIR::WEST);
-        }
-        else
-        {
-            pnode = &quadTree.neighbour(*pnode, DIR::WEST);
-            pnode = &quadTree.neighbour(*pnode, DIR::SOUTH);
-        }
-    }
-    else if(isEast)
-        pnode = &quadTree.neighbour(*pnode, DIR::EAST);
-    else if(isWest && !headsRight)
-        pnode = &quadTree.neighbour(*pnode, DIR::WEST);
-    else if(isNorth)
+    case NORTH:
         pnode = &quadTree.neighbour(*pnode, DIR::NORTH);
-    else if(isSouth && !headsUp)
+        break;
+    case WEST:
+        pnode = &quadTree.neighbour(*pnode, DIR::WEST);
+        break;
+    case SOUTH:
         pnode = &quadTree.neighbour(*pnode, DIR::SOUTH);
+        break;
+    case EAST:
+        pnode = &quadTree.neighbour(*pnode, DIR::EAST);
+        break;
+    case SOUTH|WEST:
+    {
+        if(quadTree.neighbour(*pnode, DIR::WEST).depth < pnode->depth)
+        {
+            pnode = &quadTree.neighbour(*pnode, DIR::SOUTH);
+            pnode = &quadTree.neighbour(*pnode, DIR::WEST);
+        }
+        else
+        {
+            pnode = &quadTree.neighbour(*pnode, DIR::WEST);
+            pnode = &quadTree.neighbour(*pnode, DIR::SOUTH);
+        }
+    }
+        break;
+    case SOUTH|EAST:
+    {
+        if(quadTree.neighbour(*pnode, DIR::EAST).depth < pnode->depth)
+        {
+            pnode = &quadTree.neighbour(*pnode, DIR::SOUTH);
+            pnode = &quadTree.neighbour(*pnode, DIR::EAST);
+        }
+        else
+        {
+            pnode = &quadTree.neighbour(*pnode, DIR::EAST);
+            pnode = &quadTree.neighbour(*pnode, DIR::SOUTH);
+        }
+    }
+        break;
+    case NORTH|WEST:
+    {
+        if(quadTree.neighbour(*pnode, DIR::WEST).depth < pnode->depth)
+        {
+            pnode = &quadTree.neighbour(*pnode, DIR::NORTH);
+            pnode = &quadTree.neighbour(*pnode, DIR::WEST);
+        }
+        else
+        {
+            pnode = &quadTree.neighbour(*pnode, DIR::WEST);
+            pnode = &quadTree.neighbour(*pnode, DIR::NORTH);
+        }
+    }
+        break;
+    case NORTH|EAST:
+    {
+        if(quadTree.neighbour(*pnode, DIR::EAST).depth < pnode->depth)
+        {
+            pnode = &quadTree.neighbour(*pnode, DIR::NORTH);
+            pnode = &quadTree.neighbour(*pnode, DIR::EAST);
+        }
+        else
+        {
+            pnode = &quadTree.neighbour(*pnode, DIR::EAST);
+            pnode = &quadTree.neighbour(*pnode, DIR::NORTH);
+        }
+    }
+        break;
+    default:
+        break;
+    }
 
     if(pnode->id == INVALID_ID || pnode->isLeaf)
         return pnode;
 
-    if(isSouth)
+    //Neighbour is a parent node, choose appropiate child
+
+    switch (q)
     {
-        if(isWest)
+    case NORTH:
+    {
+        if(exitPoint.x < 0.5f)
+            return &quadTree.sw(*pnode);
+        else if(exitPoint.x > 0.5f)
+            return &quadTree.se(*pnode);
+        else
         {
-            if(!headsRight && !headsUp)
-            {
-                pnode = &quadTree.ne(*pnode);
-                if(!pnode->isLeaf)
-                    pnode = &quadTree.ne(*pnode);
-            }
-            else if(!headsRight)
-                pnode = &quadTree.se(*pnode);
-            else if(!headsUp)//!headsUp only logical case (assert?)
-                pnode = &quadTree.nw(*pnode);
+            if(headsRight)
+                return &quadTree.se(*pnode);
             else
-                throw;//see...
-            return pnode;
+                return &quadTree.sw(*pnode);
         }
-        else if(isEast && !headsUp)
+    }
+        break;
+    case WEST:
+    {
+        if(exitPoint.y < 0.5f)
+            return &quadTree.se(*pnode);
+        else if(exitPoint.y > 0.5f)
+            return &quadTree.ne(*pnode);
+        else
         {
+            if(headsUp)
+                return &quadTree.ne(*pnode);
+            else
+                return &quadTree.se(*pnode);
+        }
+    }
+        break;
+    case SOUTH:
+    {
+        if(exitPoint.x < 0.5f)
+            return &quadTree.nw(*pnode);
+        else if(exitPoint.x > 0.5f)
+            return &quadTree.ne(*pnode);//oops
+        else
+        {
+            if(headsRight)
+                return &quadTree.ne(*pnode);
+            else
+                return &quadTree.nw(*pnode);
+        }
+    }
+        break;
+    case EAST:
+    {
+        if(exitPoint.y < 0.5f)
+            return &quadTree.sw(*pnode);
+        else if(exitPoint.y > 0.5f)
+            return &quadTree.nw(*pnode);
+        else
+        {
+            if(headsUp)
+                return &quadTree.nw(*pnode);
+            else
+                return &quadTree.sw(*pnode);
+        }
+    }
+        break;
+    case SOUTH|WEST:
+    {
+        pnode = &quadTree.ne(*pnode);
+        if(!pnode->isLeaf)
+            pnode = &quadTree.ne(*pnode);
+        return pnode;
+    }
+        break;
+    case SOUTH|EAST:
+    {
+        pnode = &quadTree.nw(*pnode);
+        if(!pnode->isLeaf)
             pnode = &quadTree.nw(*pnode);
-            if(!pnode->isLeaf)
-                pnode = &quadTree.nw(*pnode);
-            return pnode;
-        }
-        else if(exitPoint.x < 0.5f)
-            return &quadTree.nw(*pnode);
-        else if(exitPoint.x > 0.5f)
-            return &quadTree.ne(*pnode);
-        else
-        {
-            if(headsRight)
-                return &quadTree.ne(*pnode);
-            else
-                return &quadTree.nw(*pnode);
-        }
+        return pnode;
     }
-    if(isNorth)
+        break;
+    case NORTH|WEST:
     {
-        if(isWest && !headsRight)
-        {//otherwise goes to sw of north neighbour
+        pnode = &quadTree.se(*pnode);
+        if(!pnode->isLeaf)
             pnode = &quadTree.se(*pnode);
-            if(!pnode->isLeaf)
-                pnode = &quadTree.se(*pnode);
-            return pnode;
-        }
-        else if(isEast)
-        {//only one way else wouldn't exist in the cell
+        return pnode;
+    }
+        break;
+    case NORTH|EAST:
+    {
+        pnode = &quadTree.sw(*pnode);
+        if(!pnode->isLeaf)
             pnode = &quadTree.sw(*pnode);
-            if(!pnode->isLeaf)
-                pnode = &quadTree.sw(*pnode);
-            return pnode;
-        }
-        else if(exitPoint.x < 0.5f)
-            return &quadTree.sw(*pnode);
-        else if(exitPoint.x > 0.5f)
-            return &quadTree.se(*pnode);
-        else
-        {
-            if(headsRight)
-                return &quadTree.se(*pnode);
-            else
-                return &quadTree.sw(*pnode);
-        }
+        return pnode;
     }
-    //not North or South now
-    if(isEast)
-    {
-        if(exitPoint.y < 0.5f)
-            return &quadTree.sw(*pnode);
-        else if(exitPoint.y > 0.5f)
-            return &quadTree.nw(*pnode);
-        else
-        {
-            if(headsUp)
-                return &quadTree.nw(*pnode);
-            else
-                return &quadTree.sw(*pnode);
-        }
+        break;
+    default:
+        break;
     }
-    if(isWest)
-    {
-        if(exitPoint.y < 0.5f)
-            return &quadTree.se(*pnode);
-        else if(exitPoint.y > 0.5f)
-            return &quadTree.ne(*pnode);
-        else
-        {
-            if(headsUp)
-                return &quadTree.ne(*pnode);
-            else
-                return &quadTree.se(*pnode);
-        }
-    }
-    throw;
+
+    return pnode;
 }
 
 } //namespace TESS
