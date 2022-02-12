@@ -115,15 +115,15 @@ bool notADuplicatePoint(const Point &a, const Point &b)
     return !(a==b);
 }
 
-void addIfNotDuplicate(std::vector<BPoint> &concavePolygon, const BPoint &B)
+void addIfNotDuplicate(std::vector<BPoint> &convexPolygon, const BPoint &B)
 {
-    if(concavePolygon.size() == 0)
+    if(convexPolygon.size() == 0)
     {
-        concavePolygon.push_back(B);
+        convexPolygon.push_back(B);
         return;
     }
-    if(notADuplicatePoint(concavePolygon.back().p, B.p))
-        concavePolygon.push_back(B);
+    if(notADuplicatePoint(convexPolygon.back().p, B.p))
+        convexPolygon.push_back(B);
 }
 
 //not sure if there's a better way or not
@@ -177,8 +177,8 @@ void triangulateCellNode(CellInfo &C)
     //boundary walk... creating concave polygon lists
     std::vector<BPoint> activeList;
     activeList.reserve(8);
-    std::vector<std::vector<BPoint>> concavePolygons(lines.size() + 1);
-    for(auto &v : concavePolygons) v.reserve(8);
+    std::vector<std::vector<BPoint>> convexPolygons(lines.size() + 1);
+    for(auto &v : convexPolygons) v.reserve(8);
     unsigned int ctr = 0;
     for(const auto &B : pointList)
     {
@@ -190,23 +190,23 @@ void triangulateCellNode(CellInfo &C)
 
         while(activeList.back().type != BPoint::TYPE::START)
         {
-            addIfNotDuplicate(concavePolygons[ctr],activeList.back());
+            addIfNotDuplicate(convexPolygons[ctr],activeList.back());
             activeList.pop_back();
         }
-        addIfNotDuplicate(concavePolygons[ctr],activeList.back());
-        addIfNotDuplicate(concavePolygons[ctr],B);
+        addIfNotDuplicate(convexPolygons[ctr],activeList.back());
+        addIfNotDuplicate(convexPolygons[ctr],B);
         activeList.back().type = BPoint::TYPE::FREE;//is there a better way?
         activeList.push_back(B);
         ++ctr;
     }
     while(activeList.size())//last concave polygon
     {
-        addIfNotDuplicate(concavePolygons[ctr],activeList.back());
+        addIfNotDuplicate(convexPolygons[ctr],activeList.back());
         activeList.pop_back();
     }
 
     //map polygonIds
-    std::vector<ID> polygonIds(concavePolygons.size(), EMPTY_SPACE_ID);//'empty' space default
+    std::vector<ID> polygonIds(convexPolygons.size(), EMPTY_SPACE_ID);//'empty' space default
     for(size_t i = 0; i < lines.size(); ++i)//for each line
     {
         if(!lines[i].isFlipped)
@@ -254,55 +254,56 @@ void triangulateCellNode(CellInfo &C)
         C.neighbourIds[DIR::EAST] = rightInterval.front().val;
     }
 
-    //fan delaunay triangulate.
-    //TODO... maybe make a visualizer of this algorithm so I can understand it better / test robustness
-    //is better than it was though so that's good
+    //fan delaunay triangulate. (not robust but fast and good enough)
+    //Tried a better version but you have to start delving into half edge data structures and recursion
+    //Else the triangles move all around and indicing gets messed up
+    //This is a bit better than just plain fan triangulating so that's good
     {
     unsigned int k = 0;
-    for(auto &concavePolygon : concavePolygons)
+    for(auto &convexPolygon : convexPolygons)
     {
         ID triangleId = polygonIds[k];
         ++k;
         
-        const BPoint *P3 = &concavePolygon[1];//i-2 when i = 3
+        const BPoint *P3 = &convexPolygon[1];//i-2 when i = 3
         const BPoint *P3last = P3;
         size_t editPtIndex;
-        for(size_t i = 3; i < concavePolygon.size(); ++i)//only delaunay test if 4 points
+        for(size_t i = 3; i < convexPolygon.size(); ++i)//only delaunay test if 4 points
         {//p3 is FAR point = i-2
-            if(isDelaunay(concavePolygon[0].p, concavePolygon[i-1].p, P3->p, concavePolygon[i].p))
+            if(isDelaunay(convexPolygon[0].p, convexPolygon[i-1].p, P3->p, convexPolygon[i].p))
             {//0 -> (i-2) -> (i-1) //i-1 is p3 future
                 editPtIndex = C.triangles.size();
-                C.triangles.push_back(concavePolygon[0].p_id);
+                C.triangles.push_back(convexPolygon[0].p_id);
                 C.triangles.push_back(P3->p_id);//p3
-                C.triangles.push_back(concavePolygon[i-1].p_id);
+                C.triangles.push_back(convexPolygon[i-1].p_id);
                 P3last = P3;
-                P3 = &concavePolygon[i-1];
+                P3 = &convexPolygon[i-1];
             }
             else
             {//(i-2)->(i-1)->i  but i-2 is p3 future so unchanged
                 C.triangles.push_back(P3->p_id);
-                C.triangles.push_back(concavePolygon[i-1].p_id);
-                C.triangles.push_back(concavePolygon[i].p_id);//that's right
+                C.triangles.push_back(convexPolygon[i-1].p_id);
+                C.triangles.push_back(convexPolygon[i].p_id);//that's right
             }
             C.triangleIds.push_back(triangleId);
         }//which will leave 1 triangle in the queue at the end to pop out 0-(i-2)(OR P3)-i(now the back)
-        if(concavePolygon.size() > 2)
+        if(convexPolygon.size() > 2)
         {
             //Test the last line delaunay with last from flipping it if there was a flip. (drawing pics helps my brain)
-            if(P3last != P3  && !isDelaunay(concavePolygon[0].p, concavePolygon.back().p, P3->p, P3last->p))
+            if(P3last != P3  && !isDelaunay(convexPolygon[0].p, convexPolygon.back().p, P3->p, P3last->p))
             {
-                    C.triangles.push_back(concavePolygon.back().p_id);// P3last->p_id);
+                    C.triangles.push_back(convexPolygon.back().p_id);// P3last->p_id);
                     C.triangles.push_back(P3last->p_id);//P3->p_id);
-                    C.triangles.push_back(concavePolygon[0].p_id);//concavePolygon.back().p_id);
+                    C.triangles.push_back(convexPolygon[0].p_id);//convexPolygon.back().p_id);
                     C.triangleIds.push_back(triangleId);
                     //edit the last triangle too!!!
-                    C.triangles[editPtIndex] = concavePolygon.back().p_id;//yes
+                    C.triangles[editPtIndex] = convexPolygon.back().p_id;//yes
             }
             else
             {
-                C.triangles.push_back(concavePolygon[0].p_id);
+                C.triangles.push_back(convexPolygon[0].p_id);
                 C.triangles.push_back(P3->p_id);
-                C.triangles.push_back(concavePolygon.back().p_id);
+                C.triangles.push_back(convexPolygon.back().p_id);
                 C.triangleIds.push_back(triangleId);
             }
         }
@@ -335,7 +336,7 @@ void triangulateCellNode(CellInfo &C)
     bool cdWasSet = false;
     bool daWasSet = false;
 
-    for(auto &concavePolygon : concavePolygons)
+    for(auto &convexPolygon : convexPolygons)
     {
         ID triangleId = polygonIds[k++];
 
@@ -344,15 +345,15 @@ void triangulateCellNode(CellInfo &C)
         bool c = false;//bottom right
         bool d = false;//top right
 
-        for(unsigned int i = 0; i < concavePolygon.size(); ++i)
+        for(unsigned int i = 0; i < convexPolygon.size(); ++i)
         {
-            if(concavePolygon[i].p == Point(0,1))// .p_id == C.cornerIds[QUADRANT::NW])//Point(0,1))
+            if(convexPolygon[i].p == Point(0,1))// .p_id == C.cornerIds[QUADRANT::NW])//Point(0,1))
                 a = true;
-            if(concavePolygon[i].p == Point(0,0))//p_id == C.cornerIds[QUADRANT::SW])//Point(0,0))
+            if(convexPolygon[i].p == Point(0,0))//p_id == C.cornerIds[QUADRANT::SW])//Point(0,0))
                 b = true;
-            if(concavePolygon[i].p == Point(1,0))//p_id == C.cornerIds[QUADRANT::SE])//Point(1,0))
+            if(convexPolygon[i].p == Point(1,0))//p_id == C.cornerIds[QUADRANT::SE])//Point(1,0))
                 c = true;
-            if(concavePolygon[i].p == Point(1,1))//p_id == C.cornerIds[QUADRANT::NE])//Point(1,1))
+            if(convexPolygon[i].p == Point(1,1))//p_id == C.cornerIds[QUADRANT::NE])//Point(1,1))
                 d = true;
         }
         if(a && b && !abWasSet)
@@ -378,13 +379,13 @@ void triangulateCellNode(CellInfo &C)
 
         //create our triangles...
         {
-        for(size_t i = 2; i < concavePolygon.size(); ++i)
+        for(size_t i = 2; i < convexPolygon.size(); ++i)
         {
-            if(isNiceTriangle(concavePolygon[0].p, concavePolygon[i-1].p, concavePolygon[i].p))
+            if(isNiceTriangle(convexPolygon[0].p, convexPolygon[i-1].p, convexPolygon[i].p))
             {
-                C.triangles.push_back(concavePolygon[0].p_id);
-                C.triangles.push_back(concavePolygon[i-1].p_id);
-                C.triangles.push_back(concavePolygon[i].p_id);
+                C.triangles.push_back(convexPolygon[0].p_id);
+                C.triangles.push_back(convexPolygon[i-1].p_id);
+                C.triangles.push_back(convexPolygon[i].p_id);
                 C.triangleIds.push_back(triangleId);
             }
         }
